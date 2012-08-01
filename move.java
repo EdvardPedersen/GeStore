@@ -143,29 +143,29 @@ public class move extends Configured implements Tool{
         Configuration argConf = getConf();
         
         //Input paramaters
-        confArg.put("run_id", argConf.get("run", "1"));
-        confArg.put("file_id", argConf.get("file"));
-        confArg.put("local_path", argConf.get("path", ""));
-        confArg.put("type", argConf.get("type", "l2r"));
-        confArg.put("timestamp_start", argConf.get("timestamp_start", "197001"));
-        confArg.put("timestamp_stop", argConf.get("timestamp_stop", "999920"));
-        confArg.put("delimiter", argConf.get("regex", "ID=.*"));
-        confArg.put("taxon", argConf.get("taxon", "all"));
-        confArg.put("intermediate", argConf.get("full_run", "false"));
-        Boolean full_run = confArg.get("intermediate").matches("(?i).*true.*");
+        curConf.put("run_id", argConf.get("run", "1"));
+        curConf.put("file_id", argConf.get("file"));
+        curConf.put("local_path", argConf.get("path", ""));
+        curConf.put("type", argConf.get("type", "l2r"));
+        curConf.put("timestamp_start", argConf.get("timestamp_start", "197001"));
+        curConf.put("timestamp_stop", argConf.get("timestamp_stop", "999920"));
+        curConf.put("delimiter", argConf.get("regex", "ID=.*"));
+        curConf.put("taxon", argConf.get("taxon", "all"));
+        curConf.put("intermediate", argConf.get("full_run", "false"));
+        Boolean full_run = curConf.get("intermediate").matches("(?i).*true.*");
         
         //Constants
-        confArg.put("base_path", "/user/epe005/files/");
-        confArg.put("db_name_files", "files");
-        confArg.put("db_name_runs", "runs");
-        confArg.put("db_name_updates", "db_updates");
+        curConf.put("base_path", "/user/epe005/files/");
+        curConf.put("db_name_files", "files");
+        curConf.put("db_name_runs", "runs");
+        curConf.put("db_name_updates", "db_updates");
 
         //Timestamps
         Date currentTime = new Date();
-        Date endDate = new Date(new Long(getUnixTime(confArg.get("timestamp_stop"))));
-        confArg.put("timestamp_real", Long.toString(currentTime.getTime()));
-        confArg.put("timestamp_start", getUnixTime(confArg.get("timestamp_start")));
-        confArg.put("timestamp_stop", getUnixTime(confArg.get("timestamp_stop")));
+        Date endDate = new Date(new Long(getUnixTime(curConf.get("timestamp_stop"))));
+        curConf.put("timestamp_real", Long.toString(currentTime.getTime()));
+        curConf.put("timestamp_start", getUnixTime(curConf.get("timestamp_start")));
+        curConf.put("timestamp_stop", getUnixTime(curConf.get("timestamp_stop")));
         return true;
     }
 
