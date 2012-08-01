@@ -42,8 +42,9 @@ public class move extends Configured implements Tool{
     }
 
     public int run(String[] args) throws Exception { 
+        Configuration argConf = getConf();
         Hashtable<String,String> confArg = new Hashtable<String,String>();
-        setup(confArg);
+        setup(confArg, argConf);
         
         //Get type of movement
         toFrom type_move = checkArgs(confArg);
@@ -139,9 +140,7 @@ public class move extends Configured implements Tool{
         return 0;
     }
 
-    private static boolean setup(Hashtable<String, String> curConf) {
-        Configuration argConf = getConf();
-        
+    private static boolean setup(Hashtable<String, String> curConf, Configuration argConf) {
         //Input paramaters
         curConf.put("run_id", argConf.get("run", "1"));
         curConf.put("file_id", argConf.get("file"));
