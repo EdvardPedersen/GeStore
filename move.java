@@ -84,37 +84,23 @@ public class move extends Configured implements Tool{
             }
         }
         
-        String file_name_short = confArg.get("file_id") + "_" + confArg.get("timestamp_start") + "_" + confArg.get("timestamp_stop");
-        String filenames_put = new String();
-        
         /*
          * Generate file
          */
         
         Get file_id_get = new Get(confArg.get("file_id").getBytes());
         Result file_get = db_util.doGet(confArg.get("db_name_files"), file_id_get);
-        //String source = "local";
         if(!file_get.isEmpty()) {
             boolean found = hasFile(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg));
-            filenames_put = getFileNames(db_util, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg));
+            String filenames_put = getFileNames(db_util, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg));
             // Filename not found in file database
-            if (!found){
-                // Moving from remote to local
-                if(type_move == toFrom.REMOTE2LOCAL) {
-                    if(confArg.get("source").equals("local")) {
-                        System.out.println("Remote file not found, but other versions exist");
-                    } else {
+            if (!found && type_move == toFrom.REMOTE2LOCAL){
+                    if(!confArg.get("source").equals("local")) {
                         // Generate intermediate file
-                        System.out.println("getting file...");
                         getFile(hdfs, confArg, db_util);
                         // Put generated file into file database
                         putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), confArg.get("full_file_name"), confArg.get("source"));
                     }
-                } else if (type_move == toFrom.LOCAL2REMOTE) {
-                    // Moving from local to remote, no remote file found with same name
-                }
-            } else if (found) {
-                System.out.println("Found remote file!");
             }
         } else {
             if(type_move == toFrom.REMOTE2LOCAL) {
