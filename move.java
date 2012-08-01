@@ -139,7 +139,7 @@ public class move extends Configured implements Tool{
         return 0;
     }
 
-    private static setup(Hashtable curConf) {
+    private static boolean setup(Hashtable curConf) {
         Configuration argConf = getConf();
         
         //Input paramaters
@@ -166,6 +166,7 @@ public class move extends Configured implements Tool{
         confArg.put("timestamp_real", Long.toString(currentTime.getTime()));
         confArg.put("timestamp_start", getUnixTime(confArg.get("timestamp_start")));
         confArg.put("timestamp_stop", getUnixTime(confArg.get("timestamp_stop")));
+        return true;
     }
 
     private static toFrom checkArgs(Hashtable config) {
