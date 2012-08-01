@@ -21,7 +21,7 @@ all:    $(SOURCES)
 	jar -cvf diffdb.jar -C diffdb_classes/ .
 
 update:
-	scp -r 129.242.19.56:/home/epe005/GeStore/DiffDBMR/* .
+	#scp -r 129.242.19.56:/home/epe005/GeStore/DiffDBMR/* .
 	make
 
 enter_07_sprot:
