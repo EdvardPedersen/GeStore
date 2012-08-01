@@ -22,6 +22,17 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.zookeeper.*;
 import java.text.*;
  
+/* TODO:
+ * 
+ * - Move setup out of run
+ * - Refactor to reduce clutter
+ * - Sanitize timestamp parsing to move back to arbitrary timestamp support
+ * - Call adddb when format is supported
+ * - Add command-line arguments to get system status
+ * - add wildcard support?
+ * 
+ */
+
 public class move extends Configured implements Tool{ 
     public static enum toFrom { LOCAL2REMOTE, REMOTE2LOCAL, LOCAL2LOCAL, REMOTE2REMOTE, ERROR}
     
@@ -31,56 +42,25 @@ public class move extends Configured implements Tool{
     }
 
     public int run(String[] args) throws Exception { 
-        Configuration argConf = getConf();
-        
-        
         Hashtable<String,String> confArg = new Hashtable<String,String>();
-        confArg.put("run_id", argConf.get("run", "1"));
-        confArg.put("file_id", argConf.get("file"));
-        confArg.put("local_path", argConf.get("path", ""));
-        confArg.put("type", argConf.get("type", "l2r"));
-        confArg.put("timestamp_start", argConf.get("timestamp_start", "197001"));
-        confArg.put("timestamp_stop", argConf.get("timestamp_stop", "999920"));
-        confArg.put("delimiter", argConf.get("regex", "ID=.*"));
-        confArg.put("taxon", argConf.get("taxon", "all"));
-        confArg.put("intermediate", argConf.get("full_run", "false"));
-        Boolean full_run = confArg.get("intermediate").matches("(?i).*true.*");
-        //confArg.put("full_run", intermediate.matches("(?i).*true.*"));
-
-        confArg.put("base_path", "/user/epe005/files/");
-        confArg.put("db_name_files", "files");
-        confArg.put("db_name_runs", "runs");
-        confArg.put("db_name_updates", "db_updates");
+        setup(confArg);
         
-        System.out.println(confArg.get("unique_id"));
-
-        //String base_path = "/user/epe005/files/";
-        //String file_db_name = "files";
-        //String run_db_name = "runs";
-        //String db_updates_name = "db_updates";
-        
-        Date currentTime = new Date();
-        Date endDate = new Date(new Long(getUnixTime(confArg.get("timestamp_stop"))));
-        confArg.put("timestamp_real", Long.toString(currentTime.getTime()));
-        confArg.put("timestamp_start", getUnixTime(confArg.get("timestamp_start")));
-        confArg.put("timestamp_stop", getUnixTime(confArg.get("timestamp_stop")));
-        
+        //Get type of movement
         toFrom type_move = checkArgs(confArg);
         
+        //Database registration
         Configuration config = HBaseConfiguration.create();
         dbutil db_util = new dbutil(config);
         db_util.register_database(confArg.get("db_name_files"), true);
         db_util.register_database(confArg.get("db_name_runs"), true);
         db_util.register_database(confArg.get("db_name_updates"), true);
+        FileSystem hdfs = FileSystem.get(config);
         
         //Get source type
         confArg.put("source", getSource(db_util, confArg.get("db_name_files"), confArg.get("file_id")));
-        System.out.println("Timestamp_stop passed in: " + confArg.get("timestamp_stop"));
-        System.out.println("Timestamp_stop test     : " + getUnixTime("999920"));
         if(!confArg.get("source").equals("local") && type_move==toFrom.REMOTE2LOCAL && !confArg.get("timestamp_stop").equals(getUnixTime("999920"))) {
             confArg.put("timestamp_stop", getUnixTime(latestVersion(confArg, db_util).toString()));
         }
-        FileSystem hdfs = FileSystem.get(config);
         
         // Get previous timestamp
         Get run_id_get = new Get(confArg.get("run_id").getBytes());
@@ -99,11 +79,8 @@ public class move extends Configured implements Tool{
                     System.out.println("Timestamp start: " + confArg.get("timestamp_start"));
                 }
             }
-        } else {
-            //confArg.put("timestamp_start", "0");
         }
         
-        //String full_file_name = base_path + file_id + "_" + timestamp_start + "_" + timestamp_stop;
         String file_name_short = confArg.get("file_id") + "_" + confArg.get("timestamp_start") + "_" + confArg.get("timestamp_stop");
         String filenames_put = new String();
         
@@ -160,6 +137,35 @@ public class move extends Configured implements Tool{
             }
         }
         return 0;
+    }
+
+    private static setup(Hashtable curConf) {
+        Configuration argConf = getConf();
+        
+        //Input paramaters
+        confArg.put("run_id", argConf.get("run", "1"));
+        confArg.put("file_id", argConf.get("file"));
+        confArg.put("local_path", argConf.get("path", ""));
+        confArg.put("type", argConf.get("type", "l2r"));
+        confArg.put("timestamp_start", argConf.get("timestamp_start", "197001"));
+        confArg.put("timestamp_stop", argConf.get("timestamp_stop", "999920"));
+        confArg.put("delimiter", argConf.get("regex", "ID=.*"));
+        confArg.put("taxon", argConf.get("taxon", "all"));
+        confArg.put("intermediate", argConf.get("full_run", "false"));
+        Boolean full_run = confArg.get("intermediate").matches("(?i).*true.*");
+        
+        //Constants
+        confArg.put("base_path", "/user/epe005/files/");
+        confArg.put("db_name_files", "files");
+        confArg.put("db_name_runs", "runs");
+        confArg.put("db_name_updates", "db_updates");
+
+        //Timestamps
+        Date currentTime = new Date();
+        Date endDate = new Date(new Long(getUnixTime(confArg.get("timestamp_stop"))));
+        confArg.put("timestamp_real", Long.toString(currentTime.getTime()));
+        confArg.put("timestamp_start", getUnixTime(confArg.get("timestamp_start")));
+        confArg.put("timestamp_stop", getUnixTime(confArg.get("timestamp_stop")));
     }
 
     private static toFrom checkArgs(Hashtable config) {
