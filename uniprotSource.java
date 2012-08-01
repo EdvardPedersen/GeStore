@@ -24,14 +24,16 @@ public class uniprotSource implements sourceType{
                                 "-Dclassname=uniprot" };
         fs.delete(new Path(temp_dir), true);
         getfasta.main(submission);
-        String result_path = temp_dir + "/part-r-00000";
+        String result_path_existing = temp_dir + "/existing-r-00000";
+        String result_path_deleted = temp_dir + "/deleted-r-00000";
         //fs.rename(new Path(resultPath), new Path(final_result));
         
         local_file_system.delete(new Path(real_temp_path + "*"), true);
         
         //temp_path is wrooooong, needs to be the appropriate local directory!
         
-        fs.copyToLocalFile(true, new Path(result_path), new Path(real_temp_path));
+        fs.copyToLocalFile(true, new Path(result_path_existing), new Path(real_temp_path));
+        fs.copyToLocalFile(true, new Path(result_path_deleted), new Path(real_temp_path + ".deleted"));
         fs.delete(new Path(temp_dir), true);
         // Run formatdb
         // Needs to be moved to somewhere else!
@@ -41,19 +43,6 @@ public class uniprotSource implements sourceType{
         File workingDir = new File(params.get("temp_path_base"));
         Process formatdb = ourRuntime.exec(line, null, workingDir);
         formatdb.waitFor();
-        
-        System.out.println("(Remote) temp_dir: " + temp_dir);
-        System.out.println("(Remote) result_path: " + result_path);
-        System.out.println("(Local) temp_path: " + real_temp_path);
-        
-        String[] deletedSubmission = {  params.get("source"),
-                                        temp_dir,
-                                        params.get("timestamp_stop"),
-                                        "uniprot" };
-        
-        getdeleted.main(deletedSubmission);
-        fs.copyToLocalFile(true, new Path(result_path), new Path(real_temp_path+".deleted"));
-        fs.delete(new Path(temp_dir), true);
         
         FileStatus[] files = local_file_system.globStatus(new Path(real_temp_path + ".*"));
         return files;

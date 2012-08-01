@@ -33,6 +33,7 @@ public class getfasta extends Configured implements Tool{
         private Hashtable <String, String> delimiters;
         private Class<?> entryType;
         
+        
         public void setup(Context context) throws IOException{
             try {
                 inputTable = new HTable(context.getConfiguration().get(TableInputFormat.INPUT_TABLE));
@@ -60,15 +61,23 @@ public class getfasta extends Configured implements Tool{
             genericEntry entry;
             try{
                 entry = (genericEntry) entryType.newInstance();
-                entry.addEntry(value);
             } catch(Exception E) {
-                System.out.println("Aborting, exception: " + E.toString());
+                System.out.println("Aborting (at creation), exception: " + E.toString());
+                System.out.println("Class name: " + context.getConfiguration().get("classname"));
+                System.out.println("Class: " + entryType.toString());
                 return;
+            }
+            
+            if(!entry.addEntry(value)) {
+                System.out.println("Error parsing entry: " + value.toString());
             }
             Long exists = new Long(entry.getTableEntry("EXISTS"));
             if(null == exists) {
                 return;
             } else if(exists < (timestamp - 1)) {
+                Text tesText = new Text(value.getRow());
+                Text retText = new Text("DELETED");
+                context.write(retText, tesText);
                 return;
             }
             
@@ -104,7 +113,7 @@ public class getfasta extends Configured implements Tool{
                     completeEntry = (genericEntry) entryType.newInstance();
                     completeEntry.addEntry(newResult);
                 } catch (Exception E) {
-                    System.out.println("Aborting, exception: " + E.toString());
+                    System.out.println("Aborting (at complete entry), exception: " + E.toString());
                     return;
                 }
                 String[] keyVal = completeEntry.get(type, taxon);
@@ -116,8 +125,31 @@ public class getfasta extends Configured implements Tool{
     } 
 
     public static class getfastaReduce extends Reducer<Text, Text, Text, Text>{
-        public void reduce(Text key, Text value, Context context) throws IOException, InterruptedException {
-            context.write(key, value);
+        private MultipleOutputs<Text, Text> multiOut;
+        
+        public void setup(Context context) {
+            multiOut = new MultipleOutputs<Text, Text>(context);
+        }
+        
+        public void reduce(Text key, Iterable<Text> value, Context context) throws IOException, InterruptedException {
+            if(key.toString().equals("DELETED")) {
+                System.out.println("DELETED");
+                Iterator iter = value.iterator();
+                while(iter.hasNext()){
+                    multiOut.write((Text)iter.next(), new Text(""), "deleted");
+                }
+            } else {
+                multiOut.write(key, value.iterator().next(), "existing");
+                //context.write(key, value);
+            }
+        }
+        
+        public void cleanup(Context context) {
+            try{
+                multiOut.close();
+            } catch (Exception E) {
+                return;
+            }
         }
     }
 
@@ -143,7 +175,7 @@ public class getfasta extends Configured implements Tool{
         String outputFile = argConf.get("output_file", "temp");
         String timestampStart = argConf.get("timestamp_start", "0");
         String timestampStop = argConf.get("timestamp_stop", Integer.toString(Integer.MAX_VALUE));
-        String delimiter = argConf.get("regex", "");
+        String delimiter = argConf.get("regex", "ID=.*");
         String taxon = argConf.get("addendum", "");
         String type = argConf.get("type");
         String className = argConf.get("classname", "uniprot");
@@ -177,10 +209,13 @@ public class getfasta extends Configured implements Tool{
         job.setJarByClass(getfastaMap.class);
         
         TableMapReduceUtil.initTableMapperJob(db_util.getRealName(inputTableS), ourScan, getfastaMap.class, Text.class, Text.class, job);
+        job.setReducerClass(getfastaReduce.class);
         job.setNumReduceTasks(1);
 
         TextOutputFormat.setOutputPath(job, new Path(outputFile));
-        job.setOutputFormatClass(TextOutputFormat.class); 
+        //job.setOutputFormatClass(TextOutputFormat.class); 
+        MultipleOutputs.addNamedOutput(job, "existing", FileOutputFormat.class, Text.class, Text.class);
+        MultipleOutputs.addNamedOutput(job, "deleted", FileOutputFormat.class, Text.class, Text.class);
         job.waitForCompletion(true); 
         return 0;
     }

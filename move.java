@@ -34,6 +34,8 @@ import java.text.*;
  */
 
 public class move extends Configured implements Tool{ 
+    static String base_path = "/user/epe005/files/";
+    static String temp_path = "/tmp/gestore/";
     public static enum toFrom { LOCAL2REMOTE, REMOTE2LOCAL, LOCAL2LOCAL, REMOTE2REMOTE, ERROR}
     
     public static void main(String[] args) throws Exception { 
@@ -151,7 +153,7 @@ public class move extends Configured implements Tool{
         Boolean full_run = curConf.get("intermediate").matches("(?i).*true.*");
         
         //Constants
-        curConf.put("base_path", "/user/epe005/files/");
+        curConf.put("base_path", base_path);
         curConf.put("db_name_files", "files");
         curConf.put("db_name_runs", "runs");
         curConf.put("db_name_updates", "db_updates");
@@ -201,7 +203,7 @@ public class move extends Configured implements Tool{
         
         String final_result = getFullPath(config);
 
-        String temp_path_base = "/tmp/gestore/";
+        String temp_path_base = temp_path;
         Path newPath = new Path(final_result);
         Vector<Path> ret_path = new Vector<Path>();
         if(fs.exists(newPath)) {
