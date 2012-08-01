@@ -22,7 +22,7 @@ all:    $(SOURCES)
 
 update:
 	#scp -r 129.242.19.56:/home/epe005/GeStore/DiffDBMR/* .
-	git pull
+	#git pull
 	make
 
 enter_07_sprot:

@@ -42,6 +42,9 @@ public class move extends Configured implements Tool{
     }
 
     public int run(String[] args) throws Exception { 
+        /*
+         * SETUP
+         */
         Configuration argConf = getConf();
         Hashtable<String,String> confArg = new Hashtable<String,String>();
         setup(confArg, argConf);
@@ -66,7 +69,9 @@ public class move extends Configured implements Tool{
             confArg.put("timestamp_stop", getUnixTime(latestVersion(confArg, db_util).toString()));
         }
         
-        // Get previous timestamp
+        /*
+         * Get previous timestamp
+         */
         Get run_id_get = new Get(confArg.get("run_id").getBytes());
         Result run_get = db_util.doGet(confArg.get("db_name_runs"), run_id_get);
         KeyValue run_file_prev = run_get.getColumnLatest("d".getBytes(), confArg.get("file_id").getBytes());
@@ -74,19 +79,17 @@ public class move extends Configured implements Tool{
         if(null != run_file_prev && !confArg.get("source").equals("local")) {
             last_timestamp = new String(Long.toString(run_file_prev.getTimestamp()));
             Date last_run = new Date(run_file_prev.getTimestamp());
-            if(last_run.after(endDate) || last_run.equals(endDate)) {
-                System.out.println("Last run was done after timestamp_stop (" + Long.toString(endDate.getTime()) + " vs. " + Long.toString(last_run.getTime()) + ", should have file waiting!");
-            } else {
-                System.out.println("Updates have (possibly) been made since last update, should generate intermediate file...");
-                if(!full_run) {
-                    confArg.put("timestamp_start", getUnixTime(last_timestamp));
-                    System.out.println("Timestamp start: " + confArg.get("timestamp_start"));
-                }
+            if(last_run.before(endDate) && !full_run) {
+                confArg.put("timestamp_start", getUnixTime(last_timestamp));
             }
         }
         
         String file_name_short = confArg.get("file_id") + "_" + confArg.get("timestamp_start") + "_" + confArg.get("timestamp_stop");
         String filenames_put = new String();
+        
+        /*
+         * Generate file
+         */
         
         Get file_id_get = new Get(confArg.get("file_id").getBytes());
         Result file_get = db_util.doGet(confArg.get("db_name_files"), file_id_get);
@@ -120,6 +123,11 @@ public class move extends Configured implements Tool{
                 return 1;
             }
         }
+        
+        /*
+         * Copy file
+         * Update tables
+         */
         
         if(type_move == toFrom.LOCAL2REMOTE) {
             putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg), confArg.get("source"));
