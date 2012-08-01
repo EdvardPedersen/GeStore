@@ -139,7 +139,7 @@ public class move extends Configured implements Tool{
         return 0;
     }
 
-    private static boolean setup(Hashtable curConf) {
+    private static boolean setup(Hashtable<String, String> curConf) {
         Configuration argConf = getConf();
         
         //Input paramaters
