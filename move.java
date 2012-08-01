@@ -45,6 +45,8 @@ public class move extends Configured implements Tool{
         Configuration argConf = getConf();
         Hashtable<String,String> confArg = new Hashtable<String,String>();
         setup(confArg, argConf);
+        Date currentTime = new Date();
+        Date endDate = new Date(new Long(getUnixTime(curConf.get("timestamp_stop"))));
         
         //Get type of movement
         toFrom type_move = checkArgs(confArg);
