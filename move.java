@@ -34,8 +34,6 @@ import java.text.*;
  */
 
 public class move extends Configured implements Tool{ 
-    static String base_path = "/user/epe005/files/";
-    static String temp_path = "/tmp/gestore/";
     public static enum toFrom { LOCAL2REMOTE, REMOTE2LOCAL, LOCAL2LOCAL, REMOTE2REMOTE, ERROR}
     
     public static void main(String[] args) throws Exception { 
@@ -44,10 +42,12 @@ public class move extends Configured implements Tool{
     }
 
     public int run(String[] args) throws Exception { 
+        printUsage();
         /*
          * SETUP
          */
         Configuration argConf = getConf();
+        argConf.addResource(new Path("gestore-conf.xml"));
         Hashtable<String,String> confArg = new Hashtable<String,String>();
         setup(confArg, argConf);
         Date currentTime = new Date();
@@ -106,8 +106,8 @@ public class move extends Configured implements Tool{
             }
         } else {
             if(type_move == toFrom.REMOTE2LOCAL) {
-                System.out.println("ERROR: Remote file not found, and cannot be generated!");
-                System.out.println("config: " + confArg.toString() );
+                System.err.println("ERROR: Remote file not found, and cannot be generated!");
+                System.err.println("config: " + confArg.toString() );
                 return 1;
             }
         }
@@ -131,8 +131,6 @@ public class move extends Configured implements Tool{
                 if(suffix.length() > 0) {
                     cur_local_path = cur_local_path.suffix(new String("." + suffix));
                 }
-                System.out.println("Local file: " + cur_local_path.toString());
-                System.out.println("Suffix: " + suffix);
                 hdfs.copyToLocalFile(cur_file, cur_local_path);
             }
         }
@@ -140,6 +138,22 @@ public class move extends Configured implements Tool{
     }
 
     private static boolean setup(Hashtable<String, String> curConf, Configuration argConf) {
+        
+        if(argConf.get("file") == null) {
+            System.err.println("Missing file paramater!");
+            System.exit(1);
+        }
+        
+        if(argConf.get("hdfs_base_path") == null) {
+            System.err.println("Missing HDFS base path, check gestore-conf.xml");
+            System.exit(1);
+        }
+        
+        if(argConf.get("hdfs_temp_path") == null) {
+            System.err.println("Missing HDFS temp path, check gestore-conf.xml");
+            System.exit(1);
+        }
+        
         //Input paramaters
         curConf.put("run_id", argConf.get("run", "1"));
         curConf.put("file_id", argConf.get("file"));
@@ -153,7 +167,8 @@ public class move extends Configured implements Tool{
         Boolean full_run = curConf.get("intermediate").matches("(?i).*true.*");
         
         //Constants
-        curConf.put("base_path", base_path);
+        curConf.put("base_path", argConf.get("hdfs_base_path"));
+        curConf.put("temp_path", argConf.get("hdfs_temp_path"));
         curConf.put("db_name_files", "files");
         curConf.put("db_name_runs", "runs");
         curConf.put("db_name_updates", "db_updates");
@@ -203,7 +218,7 @@ public class move extends Configured implements Tool{
         
         String final_result = getFullPath(config);
 
-        String temp_path_base = temp_path;
+        String temp_path_base = config.get("temp_path");
         Path newPath = new Path(final_result);
         Vector<Path> ret_path = new Vector<Path>();
         if(fs.exists(newPath)) {
@@ -294,12 +309,9 @@ public class move extends Configured implements Tool{
         }
         String all_files = new String(file_names.getValue());
         String[] files = all_files.split("\n");
-        System.out.println("Searching file table for row " + file_id + " with value " + file_path);
         for(String line : files) {
             if(line.equals(file_path)) {
-                System.out.println("Match found! Should not need recomputation!");
                 if(fs.globStatus(new Path(line + "*")).length == 0) {
-                    System.out.println("False match, file does not exist!");
                     Put new_put = new Put(file_id.getBytes());
                     new_put.add("d".getBytes(), "filenames".getBytes(), all_files.replace(file_path + "\n", "").getBytes());
                     db_util.doPut(db_name, new_put);
@@ -372,5 +384,23 @@ public class move extends Configured implements Tool{
         StringBuffer retString = new StringBuffer();
         StringBuffer startDate = converter.format(formatDate, retString, new FieldPosition(0));
         return retString.toString();
+    }
+    
+    private static void printUsage()
+    {
+        System.out.println("GeStore v0.1");
+        System.out.println("Usage:");
+        System.out.println("-D run = unique identifier of pipeline run");
+        System.out.println("-D file = identifier of the file");
+        System.out.println("-D path = local path, where to find or put the file");
+        System.out.println("-D type = l2r or r2l (local to remote, or remote to local)");
+        System.out.println("-D timestamp_start = time to start processing");
+        System.out.println("-D timestamp_stop = time to stop processing");
+        System.out.println("-D regex = limit the results (ex. -Dregex=OC=.*bacteria.* for only bacterial results)");
+        System.out.println("-D full_run = 'true' if you want to re-run the complete pipeline (ie. no incremental computations");
+        System.out.println("");
+        System.out.println("Example usage:");
+        System.out.println("hadoop jar diffdb.jar org.diffdb.move -Drun=23452 -Dfile=sprot -Dtype=r2l -Dtimestamp_start=201109 -Dtimestamp_stop=201112 -Dregex=OC=.*bacteria.* -Dfull_run=false");
+        return;
     }
 }
