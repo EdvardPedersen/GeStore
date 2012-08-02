@@ -25,10 +25,56 @@ public abstract class genericEntry{
     protected int keyV = 0;
     protected byte[] family = "d".getBytes();
     
+    /********************************************
+     * Abstract methods
+     * *****************************************/
+    
+    /*
+     * Add entry from a String (generally from file)
+     * Must be implemented per-format
+     */
+    public abstract boolean addEntry(String entry);
+    
+    /*
+     * Returns a Put with elements more recent than timestamp
+     */
+    public abstract Put getPartialPut(Vector<String> fields, Long timestamp);
+    
+    /*
+     * Check if the entry contains all the elements required for the type of output specified
+     */
+    public abstract int sanityCheck(String type);
+    
+    /*
+     * Returns the row ID of the entry
+     */
+    public abstract byte[] getRowID();
+    
+    /*
+     * Generate output in the given format, with optional options
+     */
+    public abstract String[] get(String type, String options);
+
+    /*
+     * Returns a list of updated/different elements
+     */
+    public abstract Vector<String> compare(genericEntry entry);
+    
+    /*********************************************
+     * Implemented methods
+     * ******************************************/
+    
+    /* 
+     * Constructor
+     */
     public genericEntry() {
         fieldKeys = new Hashtable<String, String>();
     }
 
+    /*
+     * Populate the entry with an HBase Result
+     * Returns true on success, false otherwise
+     */
     public boolean addEntry(Result entry) {
         NavigableMap<byte[], byte[]> resultMap = entry.getFamilyMap(family);
         if(resultMap == null) {
@@ -45,13 +91,19 @@ public abstract class genericEntry{
         return true;
     }
     
-    public abstract boolean addEntry(String entry);
-    
+    /*
+     * Regexes to determine start and end of an entry within the input file
+     * Used for splitting
+     * Returns two strings representing regexes
+     */
     public String[] getRegexes() {
         String[] retString = {"^ID .*", "^//"};
         return retString;
     }
     
+    /*
+     * Adds several entries, calls addEntry(String) once per element in the array passed in
+     */
     public boolean addEntries(String[] entries) {
         for(int i = 0; i < entries.length; i++){
             addEntry(entries[i]);
@@ -59,6 +111,9 @@ public abstract class genericEntry{
         return true;
     }
     
+    /*
+     * Check if the entry has been initialized properly
+     */
     public boolean exists() {
         if(fieldKeys.isEmpty()) {
             return false;
@@ -67,8 +122,9 @@ public abstract class genericEntry{
         }
     }
     
-    public abstract Put getPartialPut(Vector<String> fields, Long timestamp);
-    
+    /*
+     * Returns a single element from the entry
+     */
     public String getTableEntry(String key) {
         if(fieldKeys.containsKey(key)) {
             return (String)fieldKeys.get(key);
@@ -77,8 +133,9 @@ public abstract class genericEntry{
         }
     }
     
-    public abstract int sanityCheck(String type);
-    
+    /*
+     * Returns the timestamp for the given element
+     */
     public Long getTimestamp(String field) {
         if(fieldTimestamps.containsKey(field)) {
             return fieldTimestamps.get(field);
@@ -86,15 +143,10 @@ public abstract class genericEntry{
             return null;
         }
     }
-
-    public abstract byte[] getRowID();
     
-    public abstract String[] get(String type, String options);
-
-    // Returns list of updated fields
-    public abstract Vector<String> compare(genericEntry entry);
-    
-    // Returns list of equal fields
+    /*
+     * Returns a list of elements that are equal
+     */
     public Vector<String> equalFields(genericEntry entry) {
         Vector<String> retList = new Vector<String>();
         for(Enumeration field = fieldKeys.keys(); field.hasMoreElements(); ) {
@@ -106,7 +158,9 @@ public abstract class genericEntry{
         return retList;
     }
     
-    // Returns list of deleted fields
+    /*
+     * Returns a list of elements that have been deleted since the passed-in entry
+     */
     public Vector<String> getDeleted(genericEntry entry) {
         Vector<String> retList = new Vector<String>();
         for(Enumeration field = fieldKeys.keys(); field.hasMoreElements(); ) {
