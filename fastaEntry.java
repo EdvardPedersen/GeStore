@@ -27,15 +27,19 @@ public class fastaEntry extends genericEntry{
         String typeIn = entry.substring(0,1);
         if(typeIn.equals(">")) {
             typeIn = "ID";
+            String existing = (String)fieldKeys.get(typeIn);
+            if(null != existing){
+                System.out.println("ERROR: ID " + entry + " and ID " + existing + " duplicate!");
+            }
         } else {
             typeIn = "SEQ";
         }
         String existing = (String)fieldKeys.get(typeIn);
         if(existing != null) {
-            String putString = existing + entry;
+            String putString = existing + entry.trim();
             fieldKeys.put(typeIn, putString);
         } else {
-            String putString = entry;
+            String putString = entry.trim();
             fieldKeys.put(typeIn, putString);
         }
         numEntries += 1;
@@ -137,8 +141,11 @@ public class fastaEntry extends genericEntry{
     private String[] getFasta(String taxon) {
         System.out.println(getTableEntry("ID").trim());
         System.out.println(taxon);
-        String id = getTableEntry("ID");
-        String seq = getTableEntry("SEQ");
+        String id = getTableEntry("ID").trim();
+        String seq = getTableEntry("SEQ").trim();
+        seq = seq.replaceAll(" ", "");
+        seq = seq.replaceAll("\0", "");
+        seq = seq.replaceAll("\\n","");
         String[] retString = {id,seq};
         return retString;
     }

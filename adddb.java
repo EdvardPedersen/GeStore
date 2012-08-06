@@ -155,7 +155,11 @@ public class adddb{
         db_util.register_database("files", true);
         db_util.register_database("db_updates", true);
         
-        DatInputFormat.addInputPath(job, new Path(inputDir));
+        FileSystem fs = FileSystem.get(config);
+        Path tempFile = new Path("/tmp/gestore/adddbFile");
+        fs.copyFromLocalFile(new Path(inputDir), tempFile);
+        
+        DatInputFormat.addInputPath(job, new Path("/tmp/gestore/adddbFile"));
         //DatInputFormat.setMinInputSplitSize(job, 10000000);
         
         job.setMapperClass(updatedbMap.class);
@@ -173,9 +177,11 @@ public class adddb{
         job.setNumReduceTasks(0);
         
         System.out.println("Table: " + outputTable + "\n");
+        
         job.waitForCompletion(true);
+        fs.delete(tempFile, false);
         Put file_put = db_util.getPut(outputTable);
-        file_put.add("d".getBytes(), "source".getBytes(), outputTable.getBytes());
+        file_put.add("d".getBytes(), "source".getBytes(), type.getBytes());
         db_util.doPut("files", file_put);
         
         Put update_put = db_util.getPut(outputTable);

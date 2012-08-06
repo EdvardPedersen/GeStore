@@ -71,6 +71,7 @@ public class getfasta extends Configured implements Tool{
             if(!entry.addEntry(value)) {
                 System.out.println("Error parsing entry: " + value.toString());
             }
+            
             Long exists = new Long(entry.getTableEntry("EXISTS"));
             if(null == exists) {
                 return;
@@ -192,7 +193,11 @@ public class getfasta extends Configured implements Tool{
         config.set("classname", "org.diffdb." + className + "Entry");
         
         dbutil db_util = new dbutil(config);
-        Job job = new Job(config, "getfasta");
+        Job job = new Job(config, "getfasta_" + className + "_" + inputTableS);
+        System.out.println("Type: " + type);
+        System.out.println("Taxon: " + taxon);
+        System.out.println("Classname: " + className);
+        System.out.println("Input table: " + inputTableS);
         HBaseAdmin hbAdmin = new HBaseAdmin(config);
         if(!hbAdmin.tableExists(inputTableS)){
             System.out.println("NO TABLE!");
@@ -216,6 +221,7 @@ public class getfasta extends Configured implements Tool{
         //job.setOutputFormatClass(TextOutputFormat.class); 
         MultipleOutputs.addNamedOutput(job, "existing", FileOutputFormat.class, Text.class, Text.class);
         MultipleOutputs.addNamedOutput(job, "deleted", FileOutputFormat.class, Text.class, Text.class);
+
         job.waitForCompletion(true); 
         return 0;
     }

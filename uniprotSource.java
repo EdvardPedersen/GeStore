@@ -14,7 +14,7 @@ public class uniprotSource implements sourceType{
         local_file_system.mkdirs(new Path(params.get("temp_path_base")));
         String temp_dir = params.get("temp_path_base") + params.get("file_id") + "_dir";
         String real_temp_path = params.get("temp_path_base") + params.get("file_id");
-        String[] submission = { "-Dinput_table=" + params.get("source"),
+        String[] submission = { "-Dinput_table=" + params.get("file_id"),
                                 "-Doutput_file=" + temp_dir, 
                                 "-Dtimestamp_start=" + params.get("timestamp_start"),
                                 "-Dtimestamp_stop=" + params.get("timestamp_stop"),
@@ -30,10 +30,10 @@ public class uniprotSource implements sourceType{
         
         local_file_system.delete(new Path(real_temp_path + "*"), true);
         
-        //temp_path is wrooooong, needs to be the appropriate local directory!
-        
-        fs.copyToLocalFile(true, new Path(result_path_existing), new Path(real_temp_path));
-        fs.copyToLocalFile(true, new Path(result_path_deleted), new Path(real_temp_path + ".deleted"));
+        if(fs.exists(new Path(result_path_existing)))
+            fs.copyToLocalFile(true, new Path(result_path_existing), new Path(real_temp_path));
+        if(fs.exists(new Path(result_path_deleted)))
+            fs.copyToLocalFile(true, new Path(result_path_deleted), new Path(real_temp_path + ".deleted"));
         fs.delete(new Path(temp_dir), true);
         // Run formatdb
         // Needs to be moved to somewhere else!

@@ -136,9 +136,7 @@ public class uniprotEntry extends genericEntry{
             String key = (String)field.nextElement();
             String localVal = (String)getTableEntry(key);
             String remoteVal = (String)entry.getTableEntry(key);
-            System.out.println("Local value: " + localVal + "\n Remote value: " + remoteVal);
             if(!localVal.equals(remoteVal)) {
-                System.out.println("New entry field: " + key);
                 retList.add(key);
             }
         }

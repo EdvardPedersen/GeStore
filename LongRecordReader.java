@@ -54,6 +54,11 @@ public class LongRecordReader extends LineRecordReader{
     private LongWritable key = null;
     private Text value = null;
     private byte[] recordDelimiterBytes;
+    private FSDataInputStream fileIn;
+    private Configuration job;
+    
+    // For saving matching line across invocations
+    private Text lastLine;
     
     private Pattern startRecordRegex = Pattern.compile(".*");
     private Pattern endRecordRegex = Pattern.compile(".*");
@@ -87,7 +92,7 @@ public class LongRecordReader extends LineRecordReader{
     // Copied from LineRecordReader
     public void initialize(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
         FileSplit split = (FileSplit) genericSplit;
-        Configuration job = context.getConfiguration();
+        job = context.getConfiguration();
         this.maxLineLength = job.getInt("mapred.linerecordreader.maxlength", Integer.MAX_VALUE);
         start = split.getStart();
         end = start + split.getLength();
@@ -97,7 +102,7 @@ public class LongRecordReader extends LineRecordReader{
 
         // open the file and seek to the start of the split
         FileSystem fs = file.getFileSystem(job);
-        FSDataInputStream fileIn = fs.open(split.getPath());
+        fileIn = fs.open(split.getPath());
         boolean skipFirstLine = false;
         if (codec != null) {
             if (null == this.recordDelimiterBytes) {
@@ -119,6 +124,7 @@ public class LongRecordReader extends LineRecordReader{
             }
         }
         this.pos = start;
+        lastLine = new Text();
     }
     
     @Override
@@ -148,7 +154,13 @@ public class LongRecordReader extends LineRecordReader{
         int newRead = 0;
         // Discard lines before start record match, save first line that matches regex
         while(!started){
-            newRead = in.readLine(tempLine, maxLineLength, Math.max((int)Math.min(Integer.MAX_VALUE, end-pos), maxLineLength));
+            if(lastLine.getLength() <= 0) {
+                newRead = in.readLine(tempLine, maxLineLength, Math.max((int)Math.min(Integer.MAX_VALUE, end-pos), maxLineLength));
+            } else {
+                tempLine = lastLine;
+                newRead = lastLine.getLength();
+                lastLine = new Text();
+            }
             if(newRead == 0) {
                 return 0;
             }
@@ -166,12 +178,14 @@ public class LongRecordReader extends LineRecordReader{
         while(!done){
             newRead = in.readLine(tempLine, maxLineLength, Math.max((int)Math.min(Integer.MAX_VALUE, end-pos), maxLineLength));
             if(newRead == 0){
-                return 0;
+                return totalRead;
             }
             totalRead += newRead;
             Matcher m = matcherStop.matcher(tempLine.toString());
             if(m.matches()){
                 done = true;
+                lastLine = tempLine;
+                return totalRead -= newRead;
             }
             tempLine.append(newLineBytes, 0, newLineBytes.length);
             value.append(tempLine.getBytes(), 0, tempLine.getLength());

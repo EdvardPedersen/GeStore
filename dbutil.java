@@ -99,7 +99,7 @@ public class dbutil{
     
     public String getRealName(String tableName)
     {
-        return "gepan_" + tableName;
+        return "gestore_" + tableName;
     }
     
     public Put getPut(String row) {

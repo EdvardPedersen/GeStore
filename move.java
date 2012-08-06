@@ -24,8 +24,6 @@ import java.text.*;
  
 /* TODO:
  * 
- * - Move setup out of run
- * - Refactor to reduce clutter
  * - Sanitize timestamp parsing to move back to arbitrary timestamp support
  * - Call adddb when format is supported
  * - Add command-line arguments to get system status
@@ -47,15 +45,22 @@ public class move extends Configured implements Tool{
          * SETUP
          */
         Configuration argConf = getConf();
-        argConf.addResource(new Path("gestore-conf.xml"));
         Hashtable<String,String> confArg = new Hashtable<String,String>();
         setup(confArg, argConf);
         Date currentTime = new Date();
-        Date endDate = new Date(new Long(getUnixTime(confArg.get("timestamp_stop"))));
+        Date endDate = new Date(new Long(confArg.get("timestamp_stop")));
         Boolean full_run = confArg.get("intermediate").matches("(?i).*true.*");
         
         //Get type of movement
         toFrom type_move = checkArgs(confArg);
+        if(type_move == toFrom.LOCAL2REMOTE && !confArg.get("format").equals("unknown")) {
+            String [] arguments = {confArg.get("local_path"),
+                                   confArg.get("file_id"),
+                                   confArg.get("timestamp_stop"),
+                                   confArg.get("format") };
+            adddb.main(arguments);
+            System.exit(0);
+        }
         
         //Database registration
         Configuration config = HBaseConfiguration.create();
@@ -67,8 +72,8 @@ public class move extends Configured implements Tool{
         
         //Get source type
         confArg.put("source", getSource(db_util, confArg.get("db_name_files"), confArg.get("file_id")));
-        if(!confArg.get("source").equals("local") && type_move==toFrom.REMOTE2LOCAL && !confArg.get("timestamp_stop").equals(getUnixTime("999920"))) {
-            confArg.put("timestamp_stop", getUnixTime(latestVersion(confArg, db_util).toString()));
+        if(!confArg.get("source").equals("local") && type_move==toFrom.REMOTE2LOCAL && !confArg.get("timestamp_stop").equals(Integer.toString(Integer.MAX_VALUE))) {
+            confArg.put("timestamp_stop", Long.toString(latestVersion(confArg, db_util)));
         }
         
         /*
@@ -76,13 +81,13 @@ public class move extends Configured implements Tool{
          */
         Get run_id_get = new Get(confArg.get("run_id").getBytes());
         Result run_get = db_util.doGet(confArg.get("db_name_runs"), run_id_get);
-        KeyValue run_file_prev = run_get.getColumnLatest("d".getBytes(), confArg.get("file_id").getBytes());
+        KeyValue run_file_prev = run_get.getColumnLatest("d".getBytes(), (confArg.get("file_id") + "_db_timestamp").getBytes());
         String last_timestamp = new String("0");
         if(null != run_file_prev && !confArg.get("source").equals("local")) {
-            last_timestamp = new String(Long.toString(run_file_prev.getTimestamp()));
+            last_timestamp = new String(run_file_prev.getValue());
             Date last_run = new Date(run_file_prev.getTimestamp());
             if(last_run.before(endDate) && !full_run) {
-                confArg.put("timestamp_start", getUnixTime(last_timestamp));
+                confArg.put("timestamp_start", last_timestamp);
             }
         }
         
@@ -119,11 +124,11 @@ public class move extends Configured implements Tool{
         
         if(type_move == toFrom.LOCAL2REMOTE) {
             putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg), confArg.get("source"));
-            putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"));
+            putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"), confArg.get("timestamp_stop"));
             hdfs.copyFromLocalFile(new Path(confArg.get("local_path")), new Path(getFullPath(confArg)));
         } else if(type_move == toFrom.REMOTE2LOCAL) {
             FileStatus[] files = hdfs.globStatus(new Path(getFullPath(confArg) + "*"));
-            putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"));
+            putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"), confArg.get("timestamp_stop"));
             for(FileStatus file : files) {
                 Path cur_file = file.getPath();
                 Path cur_local_path = new Path(new String(confArg.get("local_path") + confArg.get("file_id")));
@@ -159,26 +164,25 @@ public class move extends Configured implements Tool{
         curConf.put("file_id", argConf.get("file"));
         curConf.put("local_path", argConf.get("path", ""));
         curConf.put("type", argConf.get("type", "l2r"));
-        curConf.put("timestamp_start", argConf.get("timestamp_start", "197001"));
-        curConf.put("timestamp_stop", argConf.get("timestamp_stop", "999920"));
+        curConf.put("timestamp_start", argConf.get("timestamp_start", "0"));
+        curConf.put("timestamp_stop", argConf.get("timestamp_stop", Integer.toString(Integer.MAX_VALUE)));
         curConf.put("delimiter", argConf.get("regex", "ID=.*"));
         curConf.put("taxon", argConf.get("taxon", "all"));
         curConf.put("intermediate", argConf.get("full_run", "false"));
         Boolean full_run = curConf.get("intermediate").matches("(?i).*true.*");
+        curConf.put("format", argConf.get("format", "unknown"));
         
         //Constants
         curConf.put("base_path", argConf.get("hdfs_base_path"));
         curConf.put("temp_path", argConf.get("hdfs_temp_path"));
-        curConf.put("db_name_files", "files");
-        curConf.put("db_name_runs", "runs");
-        curConf.put("db_name_updates", "db_updates");
+        curConf.put("db_name_files", argConf.get("hbase_file_table"));
+        curConf.put("db_name_runs", argConf.get("hbase_run_table"));
+        curConf.put("db_name_updates", argConf.get("hbase_db_update_table"));
 
         //Timestamps
         Date currentTime = new Date();
-        Date endDate = new Date(new Long(getUnixTime(curConf.get("timestamp_stop"))));
+        Date endDate = new Date(new Long(curConf.get("timestamp_stop")));
         curConf.put("timestamp_real", Long.toString(currentTime.getTime()));
-        curConf.put("timestamp_start", getUnixTime(curConf.get("timestamp_start")));
-        curConf.put("timestamp_stop", getUnixTime(curConf.get("timestamp_stop")));
         return true;
     }
 
@@ -211,8 +215,8 @@ public class move extends Configured implements Tool{
         Long latestVersion = latestVersion(config, db_util);
                 
         config.put("timestamp_start", config.get("timestamp_start"));
-        config.put("timestamp_real", getUnixTime(latestVersion.toString()));
-        config.put("timestamp_stop", getUnixTime(latestVersion.toString()));
+        config.put("timestamp_real", latestVersion.toString());
+        config.put("timestamp_stop", latestVersion.toString());
                 
         System.out.println("Getting DB for timestamp: " + config.get("timestamp_start") + " to " + config.get("timestamp_stop"));
         
@@ -228,11 +232,11 @@ public class move extends Configured implements Tool{
             if(!config.get("source").equals("local")) {
                 config.put("temp_path_base", temp_path_base);
                 
-                config.put("timestamp_start", getShortTime(config.get("timestamp_start")));
+                config.put("timestamp_start", config.get("timestamp_start"));
                 config.put("timestamp_real", latestVersion.toString());
                 config.put("timestamp_stop", latestVersion.toString());
                 
-                Class<?> sourceClass = Class.forName("org.diffdb." + config.get("source"));
+                Class<?> sourceClass = Class.forName("org.diffdb." + config.get("source") + "Source");
                 Method process_data = sourceClass.getMethod("process", Hashtable.class, FileSystem.class);
                 Object processor = sourceClass.newInstance();
                 Object retVal;
@@ -245,10 +249,6 @@ public class move extends Configured implements Tool{
                     return null;
                 }
                 FileStatus [] files = (FileStatus [])retVal;
-                
-                config.put("timestamp_start", getUnixTime(config.get("timestamp_start")));
-                config.put("timestamp_real", getUnixTime(latestVersion.toString()));
-                config.put("timestamp_stop", getUnixTime(latestVersion.toString()));
                 
                 for(FileStatus file : files) {
                     Path cur_file = file.getPath();
@@ -267,10 +267,10 @@ public class move extends Configured implements Tool{
     }
     
     private static Long latestVersion(Hashtable<String, String> config, dbutil db_util) throws Exception{
-        if(!getShortTime(config.get("timestamp_stop")).equals("999920")) {
-            return new Long(getShortTime(config.get("timestamp_stop")));
+        if(!config.get("timestamp_stop").equals(Integer.toString(Integer.MAX_VALUE))) {
+            return new Long(config.get("timestamp_stop"));
         }
-        Get timestampGet = new Get(config.get("source").getBytes());
+        Get timestampGet = new Get(config.get("file_id").getBytes());
         timestampGet.addColumn("d".getBytes(), "update".getBytes());
         Result timestampResult = db_util.doGet(config.get("db_name_updates"), timestampGet);
         KeyValue tsKv = timestampResult.getColumnLatest("d".getBytes(), "update".getBytes());
@@ -355,9 +355,10 @@ public class move extends Configured implements Tool{
         return new String(file_source.getValue());
     }
     
-    private static boolean putRunEntry(dbutil db_util, String db_name, String run_id, String file_id, String type, String timestamp) throws Exception {
+    private static boolean putRunEntry(dbutil db_util, String db_name, String run_id, String file_id, String type, String timestamp, String timestamp_stop) throws Exception {
         Put run_id_put = new Put(run_id.getBytes());
         run_id_put.add("d".getBytes(), file_id.getBytes(), new Long(timestamp), type.getBytes());
+        run_id_put.add("d".getBytes(), (file_id + "_db_timestamp").getBytes(), new Long(timestamp), timestamp_stop.getBytes());
         db_util.doPut(db_name, run_id_put);
         return true;
     }
@@ -372,7 +373,7 @@ public class move extends Configured implements Tool{
         }
     }
     
-    private static String getUnixTime(String short_time) {
+/*    private static String getUnixTime(String short_time) {
         SimpleDateFormat converter = new SimpleDateFormat("yyyyMM");
         Date startDate = converter.parse(short_time, new ParsePosition(0));
         return Long.toString(startDate.getTime());
@@ -384,7 +385,7 @@ public class move extends Configured implements Tool{
         StringBuffer retString = new StringBuffer();
         StringBuffer startDate = converter.format(formatDate, retString, new FieldPosition(0));
         return retString.toString();
-    }
+    }*/
     
     private static void printUsage()
     {
@@ -398,6 +399,7 @@ public class move extends Configured implements Tool{
         System.out.println("-D timestamp_stop = time to stop processing");
         System.out.println("-D regex = limit the results (ex. -Dregex=OC=.*bacteria.* for only bacterial results)");
         System.out.println("-D full_run = 'true' if you want to re-run the complete pipeline (ie. no incremental computations");
+        System.out.println("-D format = the format of the file you are moving to or from");
         System.out.println("");
         System.out.println("Example usage:");
         System.out.println("hadoop jar diffdb.jar org.diffdb.move -Drun=23452 -Dfile=sprot -Dtype=r2l -Dtimestamp_start=201109 -Dtimestamp_stop=201112 -Dregex=OC=.*bacteria.* -Dfull_run=false");

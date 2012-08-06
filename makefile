@@ -1,12 +1,13 @@
-ENTRY_SOURCES = uniprotEntry.java genericEntry.java fastaEntry.java
-SOURCE_SOURCES = sourceType.java uniprotSource.java sprot.java trembl.java
+ENTRY_SOURCES = uniprotEntry.java genericEntry.java fastaEntry.java glimmerpredictEntry.java
+SOURCE_SOURCES = sourceType.java uniprotSource.java sprot.java trembl.java fastaSource.java glimmerpredictSource.java
 APPLICATION_SOURCE = move.java adddb.java getfasta.java dbutil.java getdeleted.java
 INPUT_SOURCE = LongRecordReader.java DatInputFormat.java
 EXPERIMENT_SOURCES = countupdates.java
 DEPRECATED_SOURCE = cmpdb.java countupdates.java getdat.java getdeleted.java annotateBlastRes.java blastoutputformat.java combineBlastOutput.java
 SOURCES = $(ENTRY_SOURCES) $(SOURCE_SOURCES) $(APPLICATION_SOURCE) $(INPUT_SOURCE) $(EXPERIMENT_SOURCES)
 CLASSPATH_JAVA = /usr/lib/hadoop-0.20/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.
-INPUT_DIR = /user/epe005/input/
+JAR_PATH = /home/epe005/GeStoreGit/GeStore/
+INPUT_DIR = /home/epe005/test_databases/
 OUTPUT_DIR = /user/epe005/output/
 SPROT_7_FILE = sprot_2011_07.dat
 SPROT_8_FILE = sprot_2011_08.dat
@@ -24,6 +25,48 @@ update:
 	#scp -r 129.242.19.56:/home/epe005/GeStore/DiffDBMR/* .
 	#git pull
 	make
+
+test_all:
+	make test_sprot
+	make test_fasta
+	make test_glimmer3
+
+run_pipeline:
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
+	#/opt/bio/glimmer/scripts/g3-iterated.csh 500_pipeline_input glimmer3.out
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_output -Dpath=glimmer3.out.predict -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=glimmerpredict -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_output -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
+	mkdir protein
+	mkdir nucleotide
+	/opt/local/perl5122/bin/perl -I /home/epe005/workingGepan /home/epe005/workingGepan/GePan/scripts/exportFasta.pl -p "file=500_glimmer_output;script_id=500;" -c "GePan::Parser::Prediction::Cds::Glimmer3" -t "nucleotide,protein" -s 500_pipeline_input -o .
+
+test_sprot:
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dpath=$(INPUT_DIR)sprot_201002.dat -Dtimestamp_stop=201002 -Dformat=uniprot -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dtimestamp_stop=201002 -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dregex=OC=.* -Dpath=testfile
+	
+test_fasta:
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile
+
+test_glimmer3:
+	/opt/bio/glimmer/scripts/g3-iterated.csh /home/epe005/sequences/masterBig/10mmaster.fas glimmer3.out
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_output -Dpath=glimmer3.out.predict -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=glimmerpredict -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_output -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile
+
+enter_sprot:
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dpath=$(INPUT_DIR)sprot_201001.dat -Dtimestamp_stop=201001 -Dformat=uniprot -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dpath=$(INPUT_DIR)sprot_201002.dat -Dtimestamp_stop=201002 -Dformat=uniprot -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dpath=$(INPUT_DIR)sprot_201003.dat -Dtimestamp_stop=201003 -Dformat=uniprot -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+
+get_sprot:
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dtimestamp_stop=201002 -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dregex=OC=.*homo.*
+
+enter_fasta:
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=$(REAL_RUN) -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	
+get_fasta:
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile
 
 enter_07_sprot:
 	hadoop jar diffdb.jar  org.diffdb.adddb $(INPUT_DIR)$(SPROT_7_FILE) sprot 201107 uniprot
