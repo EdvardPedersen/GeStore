@@ -1,0 +1,79 @@
+<Sequence GePan::Sequence::Protein>
+    <SequenceAnnotation GePan::SequenceAnnotation>
+	<transferred GePan::Hit::Blast / GePan::Hit::Fasta>
+	    <id><STRING</id>
+	    <tool>STRING</tool>
+	    <hit_length>INT</hit_length>
+	    <significant>STRING</significant>
+	    <percent_identity>INT</percent_identity>
+	    <percent_similarity>INT</percent_similarity>
+	    <hit_num>INT</hit_num>
+	    <score>INT</score>
+	    <e_value>FLOAT</e_value>
+	    <length>INT</length>
+	    <identical>INT</identical>
+	    <hsp_num>INT</hsp_num>
+	    <positives>INT</positives>
+	    <similar>INT</similar>
+	    <database GePan::Database-hash (pseudo-object)>
+		<format>STRING</format>
+		<name>STRING</name>
+		<type>STRING</type>
+		<taxon>STRING<taxon>
+	    </database>
+	    <annotation GePan::Annotation>
+		<pfam>STRING</pfam>
+		<ref_seq>STRING</ref_seq>
+		<embl>STRING</embl>
+		<confidence>STRING</confidence>
+		<id>STRING</id>
+		<description>STRING</description>
+		<pir>STRING</pir>
+		<taxonomy_id>STRING</taxonomy_id>
+		<accession>STRING</accession>
+		<type>STRING</type>
+		<gathered_threshold>FLOAT</gathered_threshold>
+	    </annotation>
+	</transferred>
+	<functional GePan::Hit::HMMer>
+	    <singificant>INT</significant>
+	    <domain_start>INT</domain_start>
+	    <domain_start>INT</domain_start>
+	    <domain_evalue>FLOAT</domain_evalue>
+	    <domain_tool>STRING</domain_tool>
+	    <domain_bias>INT</domain_bias>
+	    <tool>STRING</tool>
+	    <query_start>INT</query_start>
+	    <query_stop>INT</query_stop>
+	    <id>STRING</id>
+	    <query_length>INT</query_length>
+	    <domain_num>INT</domain_num>
+	    <accession_number>STRING</accession_number>
+	    <score>INT</score>
+	    <domain_score>INT</domain_score>
+	    <bias>INT</bias>
+	    <length>INT</length>
+	    <e_value>FLOAT</e_value>
+	    <database GePan::Database-hash (pseudo-object)>
+		<format>STRING</format>
+		<name>STRING</name>
+		<type>STRING</type>
+		<taxon>STRING<taxon>
+	    </database>
+	    <annotation GePan::Annotation>
+		<pfam>STRING</pfam>
+		<ref_seq>STRING</ref_seq>
+		<embl>STRING</embl>
+		<confidence>STRING</confidence>
+		<id>STRING</id>
+		<description>STRING</description>
+		<pir>STRING</pir>
+		<taxonomy_id>STRING</taxonomy_id>
+		<accession>STRING</accession>
+		<type>STRING</type>
+		<gathered_threshold>FLOAT</gathered_threshold>
+	    </annotation>
+	</functional>
+    <SequenceAnnotation>
+</Sequence>
+	

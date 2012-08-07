@@ -1,0 +1,12 @@
+<tool>
+    <type>prediction</type>
+    <sub_type>attribute</sub_type>
+    <id>signalp</id>
+    <input_type>protein</input_type>
+    <input_format>fasta</input_format>
+    <input_sequence_type>cds</input_sequence_type>
+    <output_type></output_type>
+    <output_sequence_type></output_sequence_type>
+    <output_format></output_format>
+    <parser>GePan::Parser::Prediction::Signalp</parser>
+</tool>

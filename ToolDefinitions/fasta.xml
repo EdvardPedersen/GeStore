@@ -1,0 +1,14 @@
+<tool>
+    <type>annotation</type>
+    <id>fasta</id>
+    <sub_type>transferred</sub_type>
+    <input_type>protein</input_type>
+    <input_sequence_type>cds</input_sequence_type>
+    <input_format>fasta</input_format>
+    <db_type>protein</db_type>
+    <db_format>blast</db_format>
+    <output_type></output_type>
+    <output_sequence_format></output_sequence_format>
+    <output_format></output_format>
+    <parser>GePan::Parser::Tool::Fast</parser>
+</tool>

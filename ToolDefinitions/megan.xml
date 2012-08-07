@@ -1,0 +1,12 @@
+<tool>
+    <type>annotation</type>
+    <sub_type>attribute</sub_type>
+    <id>megan</id>
+    <input_type>tool</input_type>
+    <input_sequence_type>blast</input_sequence_type>
+    <input_format>fasta</input_format>
+    <output_type>megan</output_type>
+    <output_sequence_type>abundance</output_sequence_type>
+    <output_format>table</output_format>
+    <parser>GePan::Parser::Prediction::Megan</parser>
+</tool>
