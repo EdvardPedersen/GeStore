@@ -518,7 +518,23 @@ sub _addAnnotations{
         # creating path to annotation db files
 	# Annotation files are put into directory DB_NAME.'_annoations';
         my @pathSplit = split(/\./,$dbConfig->getPath());
-        pop(@pathSplit);
+        
+        #UGLY HACK!
+        #Checks if the path is a real path
+        #If not, it generates a new path for the gestore database used
+        # TODO:
+        # Generalize the database names in some way
+        if(@pathSplit > 1) {
+            pop(@pathSplit);
+        } else {
+            my @newPathSplit = split("/", join('', @pathSplit));
+            my $dbName = pop(@newPathSplit);
+            push(@newPathSplit, "uniprot");
+            push(@newPathSplit, "uniprot_".$dbName."_gepan");
+            $self->{'logger'}->LogWarning("Annotator::_addAnnotations() - getPath(): ".join(',', @newPathSplit)."\n");
+            # splice(@newPathSplit, )
+            @pathSplit = join("/", @newPathSplit);
+        }
 
         my $dbPath = join(".",@pathSplit);
         $dbPath.="_annotations";

@@ -2,7 +2,7 @@ package GePan::Tool::Annotation::Blast;
 use base qw(GePan::Tool::Annotation);
 
 use strict;
-use GePan::Config qw(BLAST_PATH DATABASE_PATH);
+use GePan::Config qw(BLAST_PATH DATABASE_PATH BLAST2XML_PATH GESTORE_PATH);
 use GePan::Logger;
 use Data::Dumper;
 
@@ -128,8 +128,38 @@ sub _getExecuteStatement{
     my $outputComplete = $outputdir."/".$outputFile;
     $outputComplete=~s/\/\//\//g;
     my $db_path = $self->{'database'}->getPath();
-    $db_path=~s/\/\//\//g;
-    my $statement = BLAST_PATH." -p ".$self->{'program'}." -d $db_path -i ".$self->{'input_file'}." -o $outputComplete -b 5 -m 7 ";
+    my $statement;
+    if($self->{'database'}->getDatabaseTaxon() eq 'gestore') {
+        # Get database and deleted
+        my @paths = split('/', $db_path);
+        my $db_name = $paths[-1];
+        $statement = 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file='.$db_name.' -D run='.$self->{'run'}.' -D type=r2l -D regex='.$self->{'regex'}."\n";
+        
+        $statement .= "rm newBlastResult\n";
+        # Do the blast
+        $statement .= BLAST_PATH." -p ".$self->{'program'}." -d $db_name -i ".$self->{'input_file'}." -o newBlastResult -b 5 -m 8\n";
+        #$statement .= 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file=${SGE_TASK_ID}_blast_result_'.$db_name.' -D path=blastRes -D run='.$self->{'run'}.' -D type=l2r'."\n";
+        # Remove file
+        $statement .= 'rm ${SGE_TASK_ID}_blast_result_'.$db_name."\n";
+        $statement .= 'rm '.$db_name.".*\n";
+        $statement .= 'touch ${SGE_TASK_ID}_blast_result_'.$db_name."\n";
+        # Get previous result
+        $statement .= 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file=${SGE_TASK_ID}_blast_result_'.$db_name.' -D run='.$self->{'run'}.' -D type=r2l'."\n";
+        # In case there is no old file
+        $statement .= 'cat newBlastResult > blastRes'."\n";
+        # Sort and combine files
+        #$statement .= 'sort newBlastResult ${SGE_TASK_ID}_blast_result_'.$db_name.' > blastRes'."\n";
+        $statement .= 'cat ${SGE_TASK_ID}_blast_result_'.$db_name.' >> blastRes'."\n";
+        # Move new results to GeStore
+        $statement .= 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file=${SGE_TASK_ID}_blast_result_'.$db_name.' -D path=blastRes -D run='.$self->{'run'}.' -D type=l2r'."\n";
+        # Remove deleted entries and convert to XML
+        $statement .= BLAST2XML_PATH.' -i blastRes -d '.$db_name.'.deleted -p '.$self->{'program'}.' -t uniprot_'.$db_name.' > '.$outputComplete."\n";
+        return $statement;
+    } else {
+        $db_path=~s/\/\//\//g;
+        $statement = BLAST_PATH." -p ".$self->{'program'}." -d $db_path -i ".$self->{'input_file'}." -o $outputComplete -b 5 -m 7 ";
+        return $statement;
+    }
     return $statement;
 }
 

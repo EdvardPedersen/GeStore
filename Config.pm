@@ -40,15 +40,17 @@ use constant GLIMMER3_PATH=>'/opt/bio/glimmer/scripts';
 use constant SIGNALP_PATH=>'/share/apps/gepan/share/signalp/signalp-3.0/signalp';
 use constant DATABASE_PATH=>'/share/apps/gepan/bio_databases';
 use constant PERL_PATH=>'/opt/local/perl5122/bin/perl';
-use constant GEPAN_PATH=>'/home/emr023';
+use constant GEPAN_PATH=>'/home/emr023'; #BAD
 use constant NODE_LOCAL_PATH=>'/state/partition1';
-use constant PRIAM_PATH=>'/home/emr023/PRIAM/PRIAM_search.jar';
-use constant PRIAM_RELEASE_PATH=>'/home/emr023/PRIAM/PRIAM_MAY11';
+use constant PRIAM_PATH=>'/home/emr023/PRIAM/PRIAM_search.jar'; #BAD
+use constant PRIAM_RELEASE_PATH=>'/home/emr023/PRIAM/PRIAM_MAY11'; #BAD
 use constant PRIAM_BLAST_PATH=>'/opt/bio/ncbi/bin';
-use constant MEGAN_PATH=>'/home/emr023/MEGANTEST/megan/MEGANTEST';
+use constant MEGAN_PATH=>'/home/emr023/MEGANTEST/megan/MEGANTEST'; #BAD
 use constant KRONA_PATH=>'/opt/local/kronatools20/bin';
+use constant GESTORE_PATH=>'/home/epe005/DiffDBMR/diffdb.jar'; #BAD
+use constant BLAST2XML_PATH=>'/opt/local/python27/bin/python /home/epe005/DiffDBMR/flatfileToXml.py'; #BAD
 
-our @EXPORT_OK=qw(BLAST_PATH FASTA_PATH PFAM_PATH MGA_PATH GLIMMER3_PATH DATABASE_PATH SIGNALP_PATH PERL_PATH GEPAN_PATH NODE_LOCAL_PATH PRIAM_PATH PRIAM_BLAST_PATH PRIAM_RELEASE_PATH MEGAN_PATH KRONA_PATH);
+our @EXPORT_OK=qw(BLAST_PATH FASTA_PATH PFAM_PATH MGA_PATH GLIMMER3_PATH DATABASE_PATH SIGNALP_PATH PERL_PATH GEPAN_PATH NODE_LOCAL_PATH PRIAM_PATH PRIAM_BLAST_PATH PRIAM_RELEASE_PATH MEGAN_PATH KRONA_PATH GESTORE_PATH BLAST2XML_PATH);
 
 1;
 
