@@ -140,7 +140,12 @@ public class getfasta extends Configured implements Tool{
                     multiOut.write((Text)iter.next(), new Text(""), "deleted");
                 }
             } else {
-                multiOut.write(key, value.iterator().next(), "existing");
+                Text textValue = value.iterator().next();
+                if(!textValue.toString().isEmpty()) {
+                    multiOut.write(key, textValue, "existing");
+                } else {
+                    multiOut.write(key, null, "existing");
+                }
                 //context.write(key, value);
             }
         }

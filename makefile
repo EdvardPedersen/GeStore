@@ -32,14 +32,30 @@ test_all:
 	make test_glimmer3
 
 run_pipeline:
-	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
-	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
-	#/opt/bio/glimmer/scripts/g3-iterated.csh 500_pipeline_input glimmer3.out
-	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_output -Dpath=glimmer3.out.predict -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=glimmerpredict -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	#Glimmer
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
+	/opt/bio/glimmer/scripts/g3-iterated.csh 500_pipeline_input glimmer3.out
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_output -Dpath=glimmer3.out.predict -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=glimmerpredict -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	rm glimmer3.out.*
+	
+	#Glimmer exporter
 	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_output -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
 	mkdir protein
 	mkdir nucleotide
 	/opt/local/perl5122/bin/perl -I /home/epe005/workingGepan /home/epe005/workingGepan/GePan/scripts/exportFasta.pl -p "file=500_glimmer_output;script_id=500;" -c "GePan::Parser::Prediction::Cds::Glimmer3" -t "nucleotide,protein" -s 500_pipeline_input -o .
+	rm 500_glimmer_output
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_protein -Dpath=protein/exporter.fas -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_nucleotide -Dpath=nucleotide/exporter.fas -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	rm -rf protein
+	rm -rf nucleotide
+	
+	#FileScheduler
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_protein -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_nucleotide -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
+	#BLAST
+	#HMMer
+	#Annotator
 
 test_sprot:
 	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dpath=$(INPUT_DIR)sprot_201002.dat -Dtimestamp_stop=201002 -Dformat=uniprot -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
