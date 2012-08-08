@@ -857,7 +857,7 @@ sub _printSingleShellCall{
 
     if($params->{'gestore'})
     {
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=$input_file -D run=".$params->{'script_id'}." -D path=$input_file_path/$input_file -D type=l2r\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=$input_file -D run=".$params->{'script_id'}." -D path=$input_file_path/$input_file -D type=l2r -D format=fasta\n";
         print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=$input_file -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/\$JOB_ID/input/ -D type=r2l\n";
     } else {
         print IN "cp $input_file_path/$input_file ".NODE_LOCAL_PATH.'/gepan/$JOB_ID/input/'."\n";
@@ -890,7 +890,7 @@ sub _printSingleShellCall{
         {
             my $filename = "input.fas.".$config->getID().".out";
             my $localFile = NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/input.fas.'.$config->getID().'.out.predict';
-            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$filename." -D run=".$params->{'script_id'}." -D path=".$localFile." -D type=l2r\n";
+            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$filename." -D run=".$params->{'script_id'}." -D path=".$localFile." -D type=l2r -D format=glimmerpredict\n";
         } else {
             print IN 'mv '.NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/input.fas.'.$config->getID().'.out.predict '.$params->{'tool_files_dir'}."/".$config->getID()."/input.fas.".$config->getID().".out\n";
         }
