@@ -98,13 +98,12 @@ public class getfasta extends Configured implements Tool{
             
             int sanity_level = entry.sanityCheck(type);
             
+            String[] keyVal = {null, null};
+            
             if(sanity_level == 0) {
                 return;
             } else if(sanity_level == 1) {
-                String[] keyVal = entry.get(type, taxon);
-                Text outKey = new Text(keyVal[0]);
-                Text outValue = new Text(keyVal[1]);
-                context.write(outKey, outValue);
+                keyVal = entry.get(type, taxon);
             } else {
                 Get resultGet = new Get(value.getRow());
                 resultGet.setTimeRange(new Long(0), timestamp);
@@ -117,10 +116,16 @@ public class getfasta extends Configured implements Tool{
                     System.out.println("Aborting (at complete entry), exception: " + E.toString());
                     return;
                 }
-                String[] keyVal = completeEntry.get(type, taxon);
+                keyVal = completeEntry.get(type, taxon);
+            }
+            
+            if(keyVal[0] != null && keyVal[1] != null) {
                 Text outKey = new Text(keyVal[0]);
                 Text outValue = new Text(keyVal[1]);
+                
                 context.write(outKey, outValue);
+            } else {
+                System.out.println("Null values returned from get() in " + context.getConfiguration().get("classname") + ", unsupported format (" + type + ") specified?");
             }
         }
     } 
@@ -142,9 +147,11 @@ public class getfasta extends Configured implements Tool{
             } else {
                 Text textValue = value.iterator().next();
                 if(!textValue.toString().isEmpty()) {
-                    multiOut.write(key, textValue, "existing");
+                    multiOut.write(key, textValue, "existingMul");
+                    multiOut.write(textValue, key, "existingMul2");
                 } else {
-                    multiOut.write(key, null, "existing");
+                    //multiOut.write(key, (Text)null, "existing");
+                    multiOut.write((Text)null, key, "existing");
                 }
                 //context.write(key, value);
             }
@@ -199,6 +206,7 @@ public class getfasta extends Configured implements Tool{
         
         dbutil db_util = new dbutil(config);
         Job job = new Job(config, "getfasta_" + className + "_" + inputTableS);
+        MultipleOutputs.setCountersEnabled(job, true);
         System.out.println("Type: " + type);
         System.out.println("Taxon: " + taxon);
         System.out.println("Classname: " + className);

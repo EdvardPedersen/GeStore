@@ -2,12 +2,15 @@ package org.diffdb;
 
 import java.io.IOException; 
 import java.util.*; 
+import java.io.*; 
+import java.lang.reflect.*;
  
 import org.apache.hadoop.fs.*; 
 import org.apache.hadoop.conf.*; 
 import org.apache.hadoop.io.*; 
 import org.apache.hadoop.mapreduce.*; 
 import org.apache.hadoop.util.*; 
+import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
@@ -20,18 +23,21 @@ import org.apache.hadoop.hbase.mapreduce.*;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.zookeeper.*;
  
-public class adddb{ 
+public class adddb extends Configured implements Tool{ 
     
     public static class updatedbMap extends Mapper <LongWritable, Text, LongWritable, Put>{ 
         private HTable outputTable;
         private Long timestamp;
         private Class<?> entryType;
+        private Constructor<?> entryConstructor;
         
         public void setup(Context context) throws IOException{
             try {
                 outputTable = new HTable(context.getConfiguration(), context.getConfiguration().get(TableOutputFormat.OUTPUT_TABLE));
                 timestamp = new Long(context.getConfiguration().get("timestamp"));
                 entryType = Class.forName(context.getConfiguration().get("classname"));
+                Configuration test = new Configuration();
+                entryConstructor = entryType.getDeclaredConstructor(test.getClass());
             } catch (Exception E) {
                 System.out.println("Exception: " + E.toString());
             }
@@ -44,9 +50,9 @@ public class adddb{
             genericEntry oldEntry;
             genericEntry newerEntry;
             try {
-                newEntry = (genericEntry) entryType.newInstance();
-                oldEntry = (genericEntry) entryType.newInstance();
-                newerEntry = (genericEntry) entryType.newInstance();
+                newEntry = (genericEntry) entryConstructor.newInstance(context.getConfiguration());
+                oldEntry = (genericEntry) entryConstructor.newInstance(context.getConfiguration());
+                newerEntry = (genericEntry) entryConstructor.newInstance(context.getConfiguration());
             } catch(Exception E) {
                 return;
             }
@@ -70,7 +76,7 @@ public class adddb{
             
             if(oldEntry == null) {
                 try{
-                    oldEntry = (genericEntry) entryType.newInstance();
+                    oldEntry = (genericEntry) entryConstructor.newInstance(context.getConfiguration());
                 }catch(Exception E) {
                     return;
                 }
@@ -78,7 +84,7 @@ public class adddb{
             
             if(newerEntry == null) {
                 try {
-                    newerEntry = (genericEntry) entryType.newInstance();
+                    newerEntry = (genericEntry) entryConstructor.newInstance(context.getConfiguration());
                 } catch(Exception E) {
                     return;
                 }
@@ -127,11 +133,23 @@ public class adddb{
         }
     }
 
-    public static void main(String[] args) throws Exception { 
-        String inputDir = args[0];
-        String outputTable = args[1];
-        String timestamp  = args[2];
-        String type = args[3];
+    public static void main(String[] args) throws Exception {
+        int result = ToolRunner.run(new Configuration(), new adddb(), args);
+        return;
+    }
+    
+    public int run(String[] args) throws Exception { 
+        Configuration argConf = getConf();
+        String inputDir = argConf.get("input");
+        String outputTable = argConf.get("table");
+        String timestamp  = argConf.get("timestamp");
+        String type = argConf.get("type");
+        String targetDir = argConf.get("target_dir", "") + timestamp;
+        
+        String tempHDFSPath = argConf.get("temp_hdfs_path", "/tmp/gestore/");
+       
+        String baseFile = "adddbFile";
+        String dirFile = "adddbDirlist";
         
         //JobConf conf = new JobConf(diffdb.class); 
         Configuration config = HBaseConfiguration.create();
@@ -142,6 +160,9 @@ public class adddb{
         //config.set("outputTable", outputTable);
         config.set("timestamp", timestamp);
         config.set("classname", "org.diffdb." + type + "Entry");
+        
+        //Enable profiling information
+        config.setBoolean("mapred.task.profile", false);
 
         Class<?> ourClass = Class.forName(config.get("classname"));
         genericEntry ourEntry = (genericEntry) ourClass.newInstance();
@@ -156,10 +177,27 @@ public class adddb{
         db_util.register_database("db_updates", true);
         
         FileSystem fs = FileSystem.get(config);
-        Path tempFile = new Path("/tmp/gestore/adddbFile");
-        fs.copyFromLocalFile(new Path(inputDir), tempFile);
+        FileSystem localfs = FileSystem.getLocal(config);
+        Path tempFile = new Path(tempHDFSPath + baseFile);
         
-        DatInputFormat.addInputPath(job, new Path("/tmp/gestore/adddbFile"));
+        File target = new File(inputDir);
+        
+        if(target.isDirectory()) {
+            fs.copyFromLocalFile(new Path(inputDir), new Path(tempHDFSPath));
+            FileStatus [] files = fs.globStatus(new Path(tempHDFSPath + "/*"));
+            List<String> filenames = getFilesAndChecksums(files, fs, timestamp, targetDir, tempHDFSPath);
+            System.out.println(tempHDFSPath);
+            FSDataOutputStream newFile = fs.create(new Path(tempHDFSPath + dirFile));
+            for(String file : filenames) {
+                String output = file + "\n";
+                newFile.write(output.getBytes());
+            }
+            newFile.close();
+            DatInputFormat.addInputPath(job, new Path(tempHDFSPath + dirFile));
+        } else {
+            fs.copyFromLocalFile(new Path(inputDir), tempFile);
+            DatInputFormat.addInputPath(job, tempFile);
+        }
         //DatInputFormat.setMinInputSplitSize(job, 10000000);
         
         job.setMapperClass(updatedbMap.class);
@@ -179,7 +217,7 @@ public class adddb{
         System.out.println("Table: " + outputTable + "\n");
         
         job.waitForCompletion(true);
-        fs.delete(tempFile, false);
+        fs.delete(tempFile, true);
         Put file_put = db_util.getPut(outputTable);
         file_put.add("d".getBytes(), "source".getBytes(), type.getBytes());
         db_util.doPut("files", file_put);
@@ -190,5 +228,29 @@ public class adddb{
         db_util.doPut("db_updates", update_put);
         // Move to base_path
         // Add to gepan_files
+        return 0;
+    }
+    
+    private static List<String> getFilesAndChecksums(FileStatus [] targets, FileSystem fs, String timestamp, String targetDir, String basePath) {
+        List<String> returnStrings = new LinkedList<String>();
+        for(FileStatus currentTarget : targets) {
+            if(currentTarget.isDir()) {
+                try {
+                    returnStrings.addAll(getFilesAndChecksums(fs.globStatus(currentTarget.getPath().suffix("/*")), fs, timestamp, targetDir, basePath));
+                } catch (IOException E) {
+                    System.out.println("Error parsing files: " + E.toString());
+                    return null;
+                }
+            } else {
+                try{
+                    String append = currentTarget.getPath().toString() + "\t" + fs.getFileChecksum(currentTarget.getPath()).toString() + "\t" + timestamp + "\t" + targetDir + "\t" + basePath;
+                    returnStrings.add(append);
+                } catch (IOException E) {
+                    System.out.println("Error parsing files: " + E.toString());
+                    return null;
+                }
+            }
+        }
+        return returnStrings;
     }
 }

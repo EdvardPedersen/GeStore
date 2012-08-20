@@ -1,5 +1,5 @@
-ENTRY_SOURCES = uniprotEntry.java genericEntry.java fastaEntry.java glimmerpredictEntry.java
-SOURCE_SOURCES = sourceType.java uniprotSource.java sprot.java trembl.java fastaSource.java glimmerpredictSource.java
+ENTRY_SOURCES = uniprotEntry.java genericEntry.java fastaEntry.java glimmerpredictEntry.java pfamEntry.java hmmEntry.java priamEntry.java
+SOURCE_SOURCES = sourceType.java uniprotSource.java sprot.java trembl.java fastaSource.java glimmerpredictSource.java pfamSource.java hmmSource.java priamSource.java
 APPLICATION_SOURCE = move.java adddb.java getfasta.java dbutil.java getdeleted.java
 INPUT_SOURCE = LongRecordReader.java DatInputFormat.java
 EXPERIMENT_SOURCES = countupdates.java
@@ -56,6 +56,18 @@ run_pipeline:
 	#BLAST
 	#HMMer
 	#Annotator
+
+test_priam:
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=priam -Dpath=/home/epe005/Databases/PRIAM_OCT11 -Dtimestamp_stop=260 -Dformat=priam -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=priam -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile -Dfull_run=true
+
+test_pfam:
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=pfama -Dpath=/home/epe005/Databases/pfam/pfam_partial -Dtimestamp_stop=260 -Dformat=pfam -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=pfama -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile -Dfull_run=true
+
+test_hmm:
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=hmma -Dpath=/home/epe005/Databases/pfam/hmm_partial -Dtimestamp_stop=260 -Dformat=hmm -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=hmma -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dfull_run=true
 
 test_sprot:
 	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dpath=$(INPUT_DIR)sprot_201002.dat -Dtimestamp_stop=201002 -Dformat=uniprot -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml

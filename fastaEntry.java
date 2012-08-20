@@ -23,6 +23,10 @@ public class fastaEntry extends genericEntry{
         fieldKeys = new Hashtable<String, String>();
     }
     
+    public fastaEntry(Configuration config) {
+        fieldKeys = new Hashtable<String, String>();
+    }
+    
     public boolean addEntry(String entry) {
         String typeIn = entry.substring(0,1);
         if(typeIn.equals(">")) {

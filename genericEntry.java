@@ -67,6 +67,10 @@ public abstract class genericEntry{
     /* 
      * Constructor
      */
+    public genericEntry(Configuration config) {
+        fieldKeys = new Hashtable<String, String>();
+    }
+    
     public genericEntry() {
         fieldKeys = new Hashtable<String, String>();
     }

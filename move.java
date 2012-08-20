@@ -54,10 +54,13 @@ public class move extends Configured implements Tool{
         //Get type of movement
         toFrom type_move = checkArgs(confArg);
         if(type_move == toFrom.LOCAL2REMOTE && !confArg.get("format").equals("unknown")) {
-            String [] arguments = {confArg.get("local_path"),
-                                   confArg.get("file_id"),
-                                   confArg.get("timestamp_stop"),
-                                   confArg.get("format") };
+            String [] arguments = {"-Dinput=" + confArg.get("local_path"),
+                                   "-Dtable=" + confArg.get("file_id"),
+                                   "-Dtimestamp=" + confArg.get("timestamp_stop"),
+                                   "-Dtype=" + confArg.get("format"),
+                                   "-Dtarget_dir=" + confArg.get("base_path") + "_" + confArg.get("file_id"),
+                                   "-Dtemp_hdfs_path=" + confArg.get("temp_path")
+            };
             adddb.main(arguments);
             System.exit(0);
         }
