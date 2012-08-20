@@ -1,0 +1,22 @@
+<configuration>
+	<property>
+		<name>hdfs_base_path</name>
+		<value>/user/${user.name}/files/</value>
+	</property>
+	<property>
+		<name>hdfs_temp_path</name>
+		<value>/tmp/gestore/</value>
+	</property>
+	<property>
+		<name>hbase_file_table</name>
+		<value>files</value>
+	</property>
+	<property>
+		<name>hbase_run_table</name>
+		<value>runs</value>
+	</property>
+	<property>
+		<name>hbase_db_update_table</name>
+		<value>db_updates</value>
+	</property>
+</configuration>
