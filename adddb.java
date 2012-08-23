@@ -163,6 +163,11 @@ public class adddb extends Configured implements Tool{
         
         //Enable profiling information
         config.setBoolean("mapred.task.profile", false);
+        config.set("mapred.task.maxpmem", "8589934592");
+        System.out.println(config.get("mapred.capacity-scheduler.task.limit.maxpmem"));
+        System.out.println(config.get("mapred.capacity-scheduler.task.default-pmem-percentage-in-vmem"));
+        System.out.println(config.get("mapred.task.default.maxvmem"));
+        System.out.println(config.get("mapred.task.limit.maxvmem"));
 
         Class<?> ourClass = Class.forName(config.get("classname"));
         genericEntry ourEntry = (genericEntry) ourClass.newInstance();
@@ -216,7 +221,11 @@ public class adddb extends Configured implements Tool{
         
         System.out.println("Table: " + outputTable + "\n");
         
-        job.waitForCompletion(true);
+        try {
+            job.waitForCompletion(true);
+        } catch (Exception E) {
+            System.out.println("ERROR with the STUFFZ!!");
+        }
         fs.delete(tempFile, true);
         Put file_put = db_util.getPut(outputTable);
         file_put.add("d".getBytes(), "source".getBytes(), type.getBytes());

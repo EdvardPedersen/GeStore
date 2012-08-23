@@ -1,5 +1,5 @@
-ENTRY_SOURCES = uniprotEntry.java genericEntry.java fastaEntry.java glimmerpredictEntry.java pfamEntry.java hmmEntry.java priamEntry.java
-SOURCE_SOURCES = sourceType.java uniprotSource.java sprot.java trembl.java fastaSource.java glimmerpredictSource.java pfamSource.java hmmSource.java priamSource.java
+ENTRY_SOURCES = uniprotEntry.java genericEntry.java fastaEntry.java glimmerpredictEntry.java pfamEntry.java hmmEntry.java priamEntry.java blastoutputEntry.java hmmeroutputEntry.java
+SOURCE_SOURCES = sourceType.java uniprotSource.java sprot.java trembl.java fastaSource.java glimmerpredictSource.java pfamSource.java hmmSource.java priamSource.java blastoutputSource.java hmmeroutputSource.java
 APPLICATION_SOURCE = move.java adddb.java getfasta.java dbutil.java getdeleted.java
 INPUT_SOURCE = LongRecordReader.java DatInputFormat.java
 EXPERIMENT_SOURCES = countupdates.java
@@ -53,13 +53,26 @@ run_pipeline:
 	#FileScheduler
 	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_protein -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
 	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_nucleotide -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
+	/opt/local/perl5122/bin/perl -I /home/epe005/workingGepan /home/epe005/workingGepan/GePan/scripts/runScheduler.pl -i 500_glimmer_exported_nucleotide -o exported_nuc.fas -n 1
+	/opt/local/perl5122/bin/perl -I /home/epe005/workingGepan /home/epe005/workingGepan/GePan/scripts/runScheduler.pl -i 500_glimmer_exported_protein -o exported_pro.fas -n 1
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_protein_scheduled -Dpath=exported_pro.fas -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_nucleotide_scheduled -Dpath=exported_nuc.fas -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	
 	#BLAST
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_protein_scheduled -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_glimmer_exported_nucleotide_scheduled -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml
+	
+	
 	#HMMer
 	#Annotator
 
+test_blastoutput:
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=blastoutput -Dpath=/home/epe005/sequences/newBlastResult -Dtimestamp_stop=260 -Dformat=blastoutput -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=blastoutput -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile -Dfull_run=true
+
 test_priam:
 	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=priam -Dpath=/home/epe005/Databases/PRIAM_OCT11 -Dtimestamp_stop=260 -Dformat=priam -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
-	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=priam -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile -Dfull_run=true
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=priam -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile -Dfull_run=true
 
 test_pfam:
 	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=pfama -Dpath=/home/epe005/Databases/pfam/pfam_partial -Dtimestamp_stop=260 -Dformat=pfam -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml

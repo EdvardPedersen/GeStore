@@ -17,71 +17,52 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
-import java.util.regex.*;
 
-public class priamEntry extends genericEntry{
-    FileSystem hdfs;
-    public priamEntry(Configuration config) {
+public class hmmeroutputEntry extends genericEntry{
+    String [] requiredFields = {"target_name", 
+                                "target_accession", 
+                                "tlen", 
+                                "query_name", 
+                                "accession", 
+                                "qlen", 
+                                "e-value", 
+                                "score", 
+                                "bias", 
+                                "dnum", 
+                                "of", 
+                                "c-evalue",
+                                "i-evalue",
+                                "score",
+                                "bias",
+                                "from_hmm",
+                                "to_hmm",
+                                "from_ali",
+                                "to_ali",
+                                "from_env",
+                                "to_env",
+                                "acc",
+                                "description" };
+    public hmmeroutputEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
-        try{
-            hdfs = FileSystem.get(config);
-        } catch (IOException E) {
-            System.out.println("Error generating filesystem: " + E.toString());
-        }
     }
     
-    public priamEntry() {
+    public hmmeroutputEntry() {
         fieldKeys = new Hashtable<String, String>();
     }
     
     // Parses the string to add to a certain field
     public boolean addEntry(String entry) {
-        String [] pathHashTimestamp = entry.split("\t");
-        
-        Path targetPath = new Path(pathHashTimestamp[3]);
-        Path sourcePath = new Path(pathHashTimestamp[0]);
-        Path sourceBase = new Path(pathHashTimestamp[4].trim());
-        
-        FileStatus targetStat;
-        FileStatus baseStat;
-        
-        try {
-            hdfs.mkdirs(targetPath);
-            targetStat = hdfs.getFileStatus(targetPath);
-            baseStat = hdfs.getFileStatus(sourceBase);
-        } catch (IOException E) {
-            System.out.println("Error getting file status for files: " + E.toString());
+        String [] fields = entry.split("\t");
+        if(fields.length < 5)
             return false;
+        
+        for(Integer i = 0; i < fields.length; i++) {
+            fieldKeys.put(requiredFields[i], fields[i]);
         }
         
-        String suffix = sourcePath.toString().substring(baseStat.getPath().toString().length());
+        fieldKeys.put("ID", entry);
         
-        if(hdfs != null) {
-            try {
-                hdfs.mkdirs(targetStat.getPath().suffix(suffix).getParent());
-                if(!hdfs.rename(sourcePath, targetStat.getPath().suffix(suffix))) {
-                    System.out.println("ERROR: Moving file " + sourcePath.toString() + " to " + targetStat.getPath().suffix(suffix).toString());
-                    if(!hdfs.isFile(sourcePath)) {
-                        System.out.println("REASON: Source is not a file!");
-                    }
-                    return false;
-                }
-            } catch (IOException E) {
-                System.out.println("Unable to copy file" + E.toString());
-                return false;
-            }
-        } else {
-            System.out.println("No filesystem!");
-        }
-        
-        fieldKeys.put("ID", targetPath.toString() + suffix);
-        fieldKeys.put("HASH", pathHashTimestamp[1]);
-        fieldKeys.put("SUFFIX", suffix);
-        
-        // IDEAS:
-        // Key = hash, value = file position
-        // Key = filename, value = file position, value2 = hash
-        
+        numEntries += 1;
         return true;
     }
     
@@ -123,35 +104,45 @@ public class priamEntry extends genericEntry{
         }
         return retPut;
     }
+    
+    public String[] getRegexes() {
+        String[] retString = {".*", ".*"};
+        return retString;
+    }
 
     // Check if the entry is well-formed, based on type 
     // (e.g. if all the fields required to do a get of a certain type exist)
     public int sanityCheck(String type){
-        if(type.equals("FULL")) {
+        if(type.equals("blastoutput")) {
             String ID = getTableEntry("ID");
+            
             if(null == ID) {
                 return 0;
-            } else if(null != ID) {
-                return 1;
+            } else {
+                for(String entry : requiredFields) {
+                    if(getTableEntry(entry) == null) {
+                        return -1;
+                    }
+                }
             }
         }
-        return -1;
+        return 1;
     }
 
     // Gets the ID of the row
     public byte[] getRowID() {
-        String idStripped = (String)fieldKeys.get("ID").trim();
-        return idStripped.getBytes();
+        String id = (String)fieldKeys.get("ID").trim();
+        return id.getBytes();
     }
     
     // Returns an array of strings containing each field based on type and options
     public String[] get(String type, String options) {
-        if (type.equals("files")) {
-            String[] retString = {getFileList().toString(), ""};
-            return retString;
+        if(type.equals("blastoutput")) {
+            if(sanityCheck(type) == 1) {
+                return getBlastOutput(options);
+            }
         }
-        String[] retString = {null, null};
-        return retString;
+        return null;
     }
 
     // Returns list of updated fields
@@ -174,16 +165,14 @@ public class priamEntry extends genericEntry{
         return retList;
     }
     
-    public String[] getRegexes() {
-        String[] retString = {".*", ".*"};
-        return retString;
-    }
-    
     
     // PRIVATE
-    
-    private Text getFileList() {
-        Text outText = new Text(fieldKeys.get("ID") + "\t" + fieldKeys.get("SUFFIX"));
-        return outText;
+    private String[] getBlastOutput(String taxon) {
+        String rets = new String();
+        for(String entry : requiredFields) {
+            rets = rets + getTableEntry(entry) + "\t";
+        }
+        String[] retString = {rets.trim(),""};
+        return retString;
     }
 }

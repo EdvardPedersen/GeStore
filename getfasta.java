@@ -119,7 +119,7 @@ public class getfasta extends Configured implements Tool{
                 keyVal = completeEntry.get(type, taxon);
             }
             
-            if(keyVal[0] != null && keyVal[1] != null) {
+            if(keyVal != null) {
                 Text outKey = new Text(keyVal[0]);
                 Text outValue = new Text(keyVal[1]);
                 
