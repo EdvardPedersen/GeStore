@@ -67,7 +67,7 @@ run_pipeline:
 	#Annotator
 
 test_blastoutput:
-	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=blastoutput -Dpath=/home/epe005/sequences/newBlastResult -Dtimestamp_stop=260 -Dformat=blastoutput -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=blastoutput -Dpath=/home/epe005/sequences/newBlastResult -Dtimestamp_stop=260 -Dformat=blastoutput -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
 	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=blastoutput -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile -Dfull_run=true
 
 test_priam:

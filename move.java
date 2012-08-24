@@ -21,6 +21,8 @@ import org.apache.hadoop.hbase.mapreduce.*;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.zookeeper.*;
 import java.text.*;
+import org.apache.hadoop.hbase.zookeeper.*;
+//import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
  
 /* TODO:
  * 
@@ -32,6 +34,8 @@ import java.text.*;
  */
 
 public class move extends Configured implements Tool{ 
+    static ZooKeeper zkInstance;
+    static ZooKeeperWatcher zkWatcher;
     public static enum toFrom { LOCAL2REMOTE, REMOTE2LOCAL, LOCAL2LOCAL, REMOTE2REMOTE, ERROR}
     
     public static void main(String[] args) throws Exception { 
@@ -72,6 +76,32 @@ public class move extends Configured implements Tool{
         db_util.register_database(confArg.get("db_name_runs"), true);
         db_util.register_database(confArg.get("db_name_updates"), true);
         FileSystem hdfs = FileSystem.get(config);
+        
+        //Zookeeper testing
+        if(true){
+            System.out.println(getConfigString(config));
+            zkWatcher = new ZooKeeperWatcher(config, "Testing", new HBaseAdmin(config));
+            zkInstance = new ZooKeeper(ZKConfig.getZKQuorumServersString(config), config.getInt("zookeeper.session.timeout", -1), zkWatcher);
+            
+            System.out.println("Getting lock");
+            while(true) {
+                if(lock("test_lock")) {
+                    System.out.println("Got lock!");
+                    break;
+                } else {
+                    System.out.println("Lock busy!");
+                }
+            }
+            System.out.println("Sleeping for 30 seconds...");
+            Thread.sleep(30000);
+            if(unlock("test_lock")) {
+                System.out.println("Lock released");
+            } else {
+                System.out.println("Lock not released");
+            }
+            
+            return 0;
+        }
         
         //Get source type
         confArg.put("source", getSource(db_util, confArg.get("db_name_files"), confArg.get("file_id")));
@@ -187,6 +217,46 @@ public class move extends Configured implements Tool{
         Date endDate = new Date(new Long(curConf.get("timestamp_stop")));
         curConf.put("timestamp_real", Long.toString(currentTime.getTime()));
         return true;
+    }
+    
+    private static boolean lock(String lock) {
+        String realPath = "";
+        String lockName = "/lock-" + lock;
+        List <String> children = new LinkedList<String>();
+        try {
+            realPath = zkInstance.create(lockName, "/locked".getBytes(), zkInstance.getACL(lockName, zkInstance.exists(lock, false)) ,CreateMode.EPHEMERAL_SEQUENTIAL);
+            children = zkInstance.getChildren(realPath, false);
+        } catch(Exception E) {
+            System.out.println("While trying to get lock " + lockName);
+            System.out.println("ZKException " + E.toString());
+            E.printStackTrace();
+            return false;
+        }
+        for(String curChild : children) {
+            if(curChild.compareTo(realPath) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private static boolean unlock(String lock) {
+        try {
+            zkInstance.delete(lock, -1);
+        } catch(Exception E) {
+            return false;
+        }
+        return true;
+    }
+    
+    private static String getConfigString(Configuration config) {
+        String output = "";
+        Iterator<Map.Entry<String,String>> iterConfig = config.iterator();
+        while(iterConfig.hasNext()) {
+            Map.Entry<String,String> curEntry = iterConfig.next();
+            output = output + "Key: \t" + curEntry.getKey() + "\nValue: \t" + curEntry.getValue() + "\n";
+        }
+        return output;
     }
 
     private static toFrom checkArgs(Hashtable config) {
