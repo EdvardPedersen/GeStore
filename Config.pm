@@ -47,8 +47,8 @@ use constant PRIAM_RELEASE_PATH=>'/share/apps/gepan/bio_databases/priam/PRIAM_OC
 use constant PRIAM_BLAST_PATH=>'/opt/bio/ncbi/bin';
 use constant MEGAN_PATH=>'/home/emr023/MEGANTEST/megan/MEGANTEST'; #BAD
 use constant KRONA_PATH=>'/opt/local/kronatools20/bin';
-use constant GESTORE_PATH=>'/home/epe005/DiffDBMR/diffdb.jar'; #BAD
-use constant BLAST2XML_PATH=>'/opt/local/python27/bin/python /home/epe005/DiffDBMR/flatfileToXml.py'; #BAD
+use constant GESTORE_PATH=>'/share/apps/gestore/diffdb.jar';
+use constant BLAST2XML_PATH=>'/opt/local/python27/bin/python /share/apps/gestore/flatfileToXml.py';
 
 our @EXPORT_OK=qw(BLAST_PATH FASTA_PATH PFAM_PATH MGA_PATH GLIMMER3_PATH DATABASE_PATH SIGNALP_PATH PERL_PATH GEPAN_PATH NODE_LOCAL_PATH PRIAM_PATH PRIAM_BLAST_PATH PRIAM_RELEASE_PATH MEGAN_PATH KRONA_PATH GESTORE_PATH BLAST2XML_PATH);
 
