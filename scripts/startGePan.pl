@@ -8,7 +8,7 @@ use GePan::Collection::Sequence;
 use GePan::ToolRegister;
 use GePan::DatabaseRegister;
 use GePan::PipelineCreator;
-use GePan::Config qw(PERL_PATH GEPAN_PATH NODE_LOCAL_PATH GESTORE_PATH);
+use GePan::Config qw(PERL_PATH GEPAN_PATH NODE_LOCAL_PATH GESTORE_PATH GESTORE_CONFIG);
 
 =head1 NAME
 
@@ -173,11 +173,6 @@ sub _submitShells{
     my $pipeline = $params->{'pipeline'};
     my $dep;
     
-    if($params->{'gestore'}) {
-        my $gestoreStatement = "sh ".$params->{'shell_files_dir'}."/gestore.sh";
-        push @$statements, $gestoreStatement;
-    }
-    
     foreach my $level (@$pipeline){
 	foreach my $config (@$level){
 	    my $statement = "qsub";
@@ -300,9 +295,6 @@ sub _printArrayShell{
 
     open(IN,">>$shell") or $params->{'logger'}->LogError("GePan::_startGePan::_printArrayShell() - Failed to open shell-script $shell for writing.");
 
-    if($params->{'gestore'}){
-        open(GE, ">>".$params->{'shell_files_dir'}."/gestore.sh") or $params->{'logger'}-LogError("GePan::_startGePan::_printArrayShell() - Failed to open gepan shell script for writing.");
-    }
     
     # create directory of input files and copy them over in case it doesnt exist.
     my $ist = $config->getInputSequenceType();
@@ -323,7 +315,7 @@ sub _printArrayShell{
     # create input file path and copy it to node
     if($params->{'gestore'})
     {
-        print IN 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file='.$config->getInputType()."_scheduler.tar -D run=".$params->{'script_id'}." -D type=r2l\n";
+        print IN 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file='.$config->getInputType()."_scheduler.tar -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
         print IN "tar -xf ".$config->getInputType()."_scheduler.tar --directory=".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/input/ ./exporter.fas.$SGE_TASK_ID'."\n";
     } else {
         my $input = $params->{'data_files_dir'}."/".$config->getInputSequenceType()."/".$config->getInputType().'/tmp/exporter.fas.$SGE_TASK_ID';
@@ -367,7 +359,7 @@ sub _printArrayShell{
             if($params->{'gestore'}) {
                 my @db_path = split('/', $toolParams->{'database'}->getPath());
                 my $db_name = $db_path[-1];
-                my $db_statement = 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file='.$db_name.' -D run='.$toolParams->{'run'}.' -D type=r2l -D regex='.$toolParams->{'regex'}."\n";
+                my $db_statement = 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file='.$db_name.' -D run='.$toolParams->{'run'}.' -D type=r2l -D regex='.$toolParams->{'regex'}."-conf=".GESTORE_CONFIG."\n";
                 print GE $db_statement."\n";
             }
             eval{
@@ -392,10 +384,10 @@ sub _printArrayShell{
     {
         if($config->{'id'} eq 'priam'){
             print IN "tar -cf results.tar --directory=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/output/RESULTS/ ./paj_exporter.fas.priam.out.'.'${SGE_TASK_ID}'."_seqsECs.txt\n";
-            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".'${SGE_TASK_ID}_'.$config->getID().'_out'.".tar -D run=".$params->{'script_id'}." -D path=results.tar -D type=l2r\n";
+            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".'${SGE_TASK_ID}_'.$config->getID().'_out'.".tar -D run=".$params->{'script_id'}." -D path=results.tar -D type=l2r -conf=".GESTORE_CONFIG."\n";
         }else{
             print IN "tar -cf results.tar --directory=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/output/ .'."\n";
-            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".'${SGE_TASK_ID}_'.$config->getID().'_out'.".tar -D run=".$params->{'script_id'}." -D path=results.tar -D type=l2r\n";
+            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".'${SGE_TASK_ID}_'.$config->getID().'_out'.".tar -D run=".$params->{'script_id'}." -D path=results.tar -D type=l2r -conf=".GESTORE_CONFIG."\n";
         }
     } else {
         # bad bad bad bad bad bad bad bad.... thanks NP!!!!
@@ -517,8 +509,8 @@ sub _printAnnotatorShell{
     print IN "\n# copy parameter.xml to node\n";
     if($params->{'gestore'})
     {
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=parameter.xml -D run=".$params->{'script_id'}." -D path=".$params->{'work_dir'}."/parameter.xml -D type=l2r\n";
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=parameter.xml -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/'." -D type=r2l\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=parameter.xml -D run=".$params->{'script_id'}." -D path=".$params->{'work_dir'}."/parameter.xml -D type=l2r -conf=".GESTORE_CONFIG."\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=parameter.xml -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/'." -D type=r2l -conf=".GESTORE_CONFIG."\n";
     } else {
         print IN "cp ".$params->{'work_dir'}.'/parameter.xml '.NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}'."\n";
     }
@@ -550,7 +542,7 @@ sub _printAnnotatorShell{
                 if($params->{'gestore'})
                 {
                     #UGLY HACK! Should replace entire code segment -epe
-                    print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=collection.xml -D run=".$params->{'script_id'}." -D path=".$params->{'data_files_dir'}."/".$config->getOutputSequenceType()."/ -D type=r2l\n";
+                    print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=collection.xml -D run=".$params->{'script_id'}." -D path=".$params->{'data_files_dir'}."/".$config->getOutputSequenceType()."/ -D type=r2l -conf=".GESTORE_CONFIG."\n";
                 }
                 
 		# if collection xml
@@ -561,15 +553,18 @@ sub _printAnnotatorShell{
 		print IN "\tcp ".$params->{'data_files_dir'}."/".$config->getOutputSequenceType()."/collection.xml ".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/data/'.$config->getOutputSequenceType()."\nfi\n";
 		next;
 	    }
-
+            
+            # create directory for tool result files   
+            print IN "\n# Create tool result files directory\n";
+            print IN 'mkdir '.NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/tools/'.lc($config->getID())."\n"; 
 
 	    # copy one fasta file over
             if($params->{'gestore'})
             {
-                print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=nucleotide_scheduler.tar -D run=".$params->{'script_id'}." -D type=r2l\n";
+                print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=nucleotide_scheduler.tar -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
                 print IN "tar -xf nucleotide_scheduler.tar --directory=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/data/cds/ ./*.${SGE_TASK_ID}'."\n";
                 
-                print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".'${SGE_TASK_ID}'."_".$config->getID()."_out.tar -D run=".$params->{'script_id'}." -D type=r2l\n";
+                print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".'${SGE_TASK_ID}'."_".$config->getID()."_out.tar -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
                 print IN "tar -xf ".'${SGE_TASK_ID}'."_".$config->getID()."_out.tar --directory=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/tools/'.lc($config->getID())."\n";
             } else {
                 print IN "\n# Copy one task fasta file over\n";
@@ -579,10 +574,6 @@ sub _printAnnotatorShell{
                 print IN "\n# Copy tool result files ending on sge_task_id over to appropriate directory\n";
                 print IN "cp ".$params->{'tool_files_dir'}."/".lc($config->getID()).'/*.${SGE_TASK_ID} '.NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/tools/'.lc($config->getID())."\n";
             }
-
-	    # create directory for tool result files   
-	    print IN "\n# Create tool result files directory\n";
-	    print IN 'mkdir '.NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/tools/'.lc($config->getID())."\n"; 
 	}
     }
 
@@ -595,7 +586,7 @@ sub _printAnnotatorShell{
     if($params->{'gestore'})
     {
         print IN "tar -cf results.tar --directory=".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/results/ .'."\n";
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=annotator.".'${SGE_TASK_ID}'.".tar -D run=".$params->{'script_id'}." -D path=results.tar -D type=l2r\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=annotator.".'${SGE_TASK_ID}'.".tar -D run=".$params->{'script_id'}." -D path=results.tar -D type=l2r -conf=".GESTORE_CONFIG."\n";
         #BAD BAD BAD! Hack to produce results since annotator.TASK_ID.tar is hard to get in and out reliably from GeStore
         # proper solutions: synchronization? support for wildcards? in-system archive support? alternate timestamp format?
         print IN "mv ".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/results/* '.$params->{'work_dir'}."/results/\n";
@@ -674,7 +665,7 @@ sub _printExporterShellCall{
     
     if($params->{'gestore'})
     {
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=input.fas.".$config->getID().".out -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'." -D type=r2l\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=input.fas.".$config->getID().".out -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'." -D type=r2l -conf=".GESTORE_CONFIG."\n ";
     } else {
         my $inputFiles = $params->{'tool_files_dir'}."/".$config->getID()."/input.fas.".$config->getID().".out";
         $inputFiles=~s/\/\//\//g;
@@ -705,7 +696,7 @@ sub _printExporterShellCall{
     foreach(@split){
         if($params->{'gestore'})
         {
-            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$_."_exporter.fas -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/'."output/$_/exporter.fas -D type=l2r\n";
+            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$_."_exporter.fas -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/'."output/$_/exporter.fas -D type=l2r -conf=".GESTORE_CONFIG."\n";
         } else {
             print IN "mv ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/'."output/$_/exporter.fas ".$params->{'data_files_dir'}."/".$config->getOutputSequenceType()."/$_/\n";
             print IN "rmdir ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/'."output/$_\n";
@@ -715,7 +706,7 @@ sub _printExporterShellCall{
     # move collection.xml to work_dir/cds directory
     if($params->{'gestore'})
     {
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=collection.xml -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/collection.xml'." -D type=l2r\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=collection.xml -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/collection.xml'." -D type=l2r -conf=".GESTORE_CONFIG."\n";
     } else {
         print IN 'mv '.NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/collection.xml '.$params->{'data_files_dir'}."/".$config->getOutputSequenceType()."\n";
     }
@@ -764,7 +755,7 @@ sub _printSchedulerShell{
     # copy nucleotide fasta over to input
     if($params->{'gestore'})
     {
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=nucleotide_exporter.fas -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'." -D type=r2l\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=nucleotide_exporter.fas -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'." -D type=r2l -conf=".GESTORE_CONFIG."\n";
         print IN "mv ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/nucleotide_exporter.fas '.NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/exporter.fas'."\n";
     } else {
         # copy nucleotide fasta over to input
@@ -778,9 +769,9 @@ sub _printSchedulerShell{
     if($params->{'gestore'})
     {
         print IN "tar -cf nucleotide_scheduler.tar --directory=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/output/ .'."\n";
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=nucleotide_scheduler.tar -D run=".$params->{'script_id'}." -D path=nucleotide_scheduler.tar -D type=l2r\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=nucleotide_scheduler -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH.'/gepan/$JOB_ID/output -D type=l2r -conf='.GESTORE_CONFIG."\n";
 
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=protein_exporter.fas -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'." -D type=r2l\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=protein_exporter.fas -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'." -D type=r2l -conf=".GESTORE_CONFIG."\n";
         print IN "mv ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/protein_exporter.fas '.NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/exporter.fas'."\n";
         print IN "rm ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/output/*'."\n";
     } else {
@@ -799,7 +790,7 @@ sub _printSchedulerShell{
     if($params->{'gestore'})
     {
         print IN "tar -cf fileScheduler.tar --directory=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/output/ .'."\n";
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=protein_scheduler.tar -D run=".$params->{'script_id'}." -D path=fileScheduler.tar -D type=l2r\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=protein_scheduler.tar -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH.'/gepan/$JOB_ID/output -D type=l2r -conf='.GESTORE_CONFIG."\n";
     } else {
         print IN "mv ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/output/* '.$params->{'data_files_dir'}."/cds/protein/tmp/\n";
     }
@@ -857,8 +848,8 @@ sub _printSingleShellCall{
 
     if($params->{'gestore'})
     {
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=$input_file -D run=".$params->{'script_id'}." -D path=$input_file_path/$input_file -D type=l2r -D format=fasta\n";
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=$input_file -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/\$JOB_ID/input/ -D type=r2l\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=$input_file -D run=".$params->{'script_id'}." -D path=$input_file_path/$input_file -D type=l2r -D format=fasta -conf=".GESTORE_CONFIG."\n";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=$input_file -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/\$JOB_ID/input/ -D type=r2l -conf=".GESTORE_CONFIG."\n";
     } else {
         print IN "cp $input_file_path/$input_file ".NODE_LOCAL_PATH.'/gepan/$JOB_ID/input/'."\n";
     }
@@ -890,7 +881,7 @@ sub _printSingleShellCall{
         {
             my $filename = "input.fas.".$config->getID().".out";
             my $localFile = NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/input.fas.'.$config->getID().'.out.predict';
-            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$filename." -D run=".$params->{'script_id'}." -D path=".$localFile." -D type=l2r -D format=glimmerpredict\n";
+            print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$filename." -D run=".$params->{'script_id'}." -D path=".$localFile." -D type=l2r -D format=glimmerpredict -conf=".GESTORE_CONFIG."\n";
         } else {
             print IN 'mv '.NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/input.fas.'.$config->getID().'.out.predict '.$params->{'tool_files_dir'}."/".$config->getID()."/input.fas.".$config->getID().".out\n";
         }
