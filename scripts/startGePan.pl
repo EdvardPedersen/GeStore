@@ -666,16 +666,17 @@ sub _printExporterShellCall{
     if($params->{'gestore'})
     {
         print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=input.fas.".$config->getID().".out -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'." -D type=r2l -conf=".GESTORE_CONFIG."\n ";
+        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=input.fas -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'." -D type=r2l -conf=".GESTORE_CONFIG."\n ";
     } else {
         my $inputFiles = $params->{'tool_files_dir'}."/".$config->getID()."/input.fas.".$config->getID().".out";
         $inputFiles=~s/\/\//\//g;
         print IN "cp $inputFiles ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'."\n";
+        # get parent sequence fasta file
+        my $parentInputDir = $params->{'data_files_dir'}."/".lc($config->getInputSequenceType())."/".lc($config->getInputType());
+        $parentInputDir=~s/\/\//\//g;
+        print IN "cp $parentInputDir/input.fas ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'."\n";
     }
-
-    # get parent sequence fasta file
-    my $parentInputDir = $params->{'data_files_dir'}."/".lc($config->getInputSequenceType())."/".lc($config->getInputType());
-    $parentInputDir=~s/\/\//\//g;
-    print IN "cp $parentInputDir/input.fas ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'."\n";
+    
  
     # create parameterString for script
     my $paramString = "";
