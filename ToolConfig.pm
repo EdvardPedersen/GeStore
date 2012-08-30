@@ -183,7 +183,51 @@ sub getOutputFormat{
     return $self->{'output_format'};
 }
 
+=head2 B<setGsOutputFormat(format)>
 
+Sets format of output files.
+
+=cut
+
+sub setGsOutputFormat{
+    my ($self,$format) = @_;
+    $self->{'gs_output_format'} = $format;
+}
+
+
+=head2 B<getGsOutputFormat()>
+
+Returns format of output file for this tool.
+
+=cut
+
+sub getGsOutputFormat{
+    my $self = shift;
+    return $self->{'gs_output_format'};
+}
+
+=head2 B<setGsOutputFormat(format)>
+
+Sets format of output files.
+
+=cut
+
+sub setGsInputFormat{
+    my ($self,$format) = @_;
+    $self->{'gs_input_format'} = $format;
+}
+
+
+=head2 B<getGsOutputFormat()>
+
+Returns format of output file for this tool.
+
+=cut
+
+sub getGsInputFormat{
+    my $self = shift;
+    return $self->{'gs_input_format'};
+}
 
 =head2 B<getInputSequenceType()>
 

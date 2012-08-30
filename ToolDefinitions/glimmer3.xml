@@ -9,4 +9,6 @@
     <output_sequence_type>cds</output_sequence_type>
     <output_format>fasta</output_format>
     <parser>GePan::Parser::Prediction::Cds::Glimmer3</parser>
+    <gs_input_format>fasta</gs_input_format>
+    <gs_output_format>glimmerpredict</gs_output_format>
 </tool>

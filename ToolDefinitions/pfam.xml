@@ -11,4 +11,6 @@
     <output_sequence_format></output_sequence_format>
     <output_format></output_format>
     <parser>GePan::Parser::Annotation::Pfam</parser>
+    <gs_input_format>fasta</gs_input_format>
+    <gs_output_format></gs_output_format>
 </tool>

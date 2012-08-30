@@ -377,6 +377,8 @@ sub _printArrayShell{
         $params->{'logger'}->LogError("startGePan::_printSingleShellCall() - $@") if ($@);
     }
 
+    #print "Input format GS: ".$config->getGsInputFormat()."\n";
+    #print "Output format GS: ".$config->getGsOutputFormat()."\n";
 
     # copy result files to working directory in home
     print IN "\n# Copy result files to home directory\n";
@@ -887,7 +889,7 @@ sub _printSingleShellCall{
             print IN 'mv '.NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/input.fas.'.$config->getID().'.out.predict '.$params->{'tool_files_dir'}."/".$config->getID()."/input.fas.".$config->getID().".out\n";
         }
     }
-
+    
     # cleanup
     print IN "\n# Cleanup\n";
     print IN 'rm '.NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/*'."\n";
