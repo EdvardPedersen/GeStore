@@ -102,6 +102,10 @@ public class dbutil{
         return "gestore_" + tableName;
     }
     
+    public static String getShortName(String tableName) {
+        return tableName.substring("gestore_".length());
+    }
+    
     public Put getPut(String row) {
         return new Put(row.getBytes());
     }

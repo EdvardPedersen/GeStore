@@ -24,10 +24,20 @@ import org.apache.hadoop.mapreduce.lib.output.*;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
  
 public class getfasta extends Configured implements Tool{ 
+    private static Long timestamp;
+    private static Long lowTimestamp;
+    private static Long entNum;
+    
+    public static enum ENTRY_COUNTER {
+        ENTRIES,
+        MODIFIED,
+        NEW,
+        DELETED,
+        NON_MATCHING
+    }
+    
     public static class getfastaMap extends TableMapper<Text, Text>{ 
         private HTable inputTable;
-        private Long timestamp;
-        private Long lowTimestamp;
         private String taxon;
         private String type;
         private Hashtable <String, String> delimiters;
@@ -51,6 +61,7 @@ public class getfasta extends Configured implements Tool{
                     delimiters.put(delimiter_parts[0], delimiter_parts[1]);
                 }
                 entryType = Class.forName(context.getConfiguration().get("classname"));
+                entNum = new Long(0);
             } catch (Exception E) {
                 System.out.println("Exception: " + E.toString());
                 E.printStackTrace();
@@ -78,6 +89,7 @@ public class getfasta extends Configured implements Tool{
             } else if(exists < (timestamp - 1)) {
                 Text tesText = new Text(value.getRow());
                 Text retText = new Text("DELETED");
+                context.getCounter(ENTRY_COUNTER.DELETED).increment(1);
                 context.write(retText, tesText);
                 return;
             }
@@ -92,6 +104,7 @@ public class getfasta extends Configured implements Tool{
                 Matcher delimiter_matcher = delimiter_regex.matcher(match_entry);
                 //delim_value.matches(delim_regex)
                 if(!delimiter_matcher.matches()) {
+                    context.getCounter(ENTRY_COUNTER.NON_MATCHING).increment(1);
                     return;
                 }
             }
@@ -122,7 +135,8 @@ public class getfasta extends Configured implements Tool{
             if(keyVal != null) {
                 Text outKey = new Text(keyVal[0]);
                 Text outValue = new Text(keyVal[1]);
-                
+                context.getCounter(ENTRY_COUNTER.ENTRIES).increment(1);
+                entNum += 1;
                 context.write(outKey, outValue);
             } else {
                 System.out.println("Null values returned from get() in " + context.getConfiguration().get("classname") + ", unsupported format (" + type + ") specified?");
@@ -142,13 +156,14 @@ public class getfasta extends Configured implements Tool{
                 System.out.println("DELETED");
                 Iterator iter = value.iterator();
                 while(iter.hasNext()){
+                    context.getCounter(ENTRY_COUNTER.DELETED).increment(1);
                     multiOut.write((Text)iter.next(), new Text(""), "deleted");
                 }
             } else {
                 Text textValue = value.iterator().next();
+                context.getCounter(ENTRY_COUNTER.ENTRIES).increment(1);
                 if(!textValue.toString().isEmpty()) {
-                    multiOut.write(key, textValue, "existingMul");
-                    multiOut.write(textValue, key, "existingMul2");
+                    multiOut.write(key, textValue, "existing");
                 } else {
                     //multiOut.write(key, (Text)null, "existing");
                     multiOut.write((Text)null, key, "existing");
@@ -157,7 +172,36 @@ public class getfasta extends Configured implements Tool{
             }
         }
         
-        public void cleanup(Context context) {
+        
+        public void cleanup(Context context) throws IOException, InterruptedException{
+            Long timestamp_start = new Long(context.getConfiguration().get("low_timestamp"));
+            Long timestamp_stop = new Long(context.getConfiguration().get("timestamp"));
+            timestamp_stop += 1;
+            String table_name = "gestore_db_updates";
+            String row_name = dbutil.getShortName(context.getConfiguration().get(TableInputFormat.INPUT_TABLE));
+            String family = "d";
+            String column_name = "entries";
+            
+            String entries = Long.toString(context.getCounter(ENTRY_COUNTER.ENTRIES).getValue());
+            String metadata = "# Metadata for getfasta\n";
+            
+            // Get the number of entries for the current database version
+            HTable updates = new HTable(table_name);
+            Get full_entries_get = new Get(row_name.getBytes());
+            full_entries_get.setTimeRange(timestamp_start, timestamp_stop);
+            full_entries_get.addColumn(family.getBytes(), column_name.getBytes());
+            Result entries_res = updates.get(full_entries_get);
+            KeyValue run_file_prev = entries_res.getColumnLatest(family.getBytes(), column_name.getBytes());
+            String lastEntries = new String(run_file_prev.getValue());
+            
+            metadata = metadata + "TABLE_NAME\t" + table_name + "\n";
+            metadata = metadata + "INC_ENTRIES\t" + entries + "\n";
+            metadata = metadata + "FULL_ENTRIES\t" + lastEntries + "\n";
+            metadata = metadata + "TYPE\t" + context.getConfiguration().get("type") + "\n";
+            metadata = metadata + "TAXON\t" + context.getConfiguration().get("taxon") + "\n";
+            metadata = metadata + "CLASSNAME\t" + context.getConfiguration().get("classname") + "\n";
+            multiOut.write((Text)null, new Text(metadata), "metadata");
+            //Long.toString(allCounter.findCounter(ENTRY_COUNTER.EXISTING).getValue());
             try{
                 multiOut.close();
             } catch (Exception E) {
@@ -204,6 +248,9 @@ public class getfasta extends Configured implements Tool{
         config.set("type", type);
         config.set("classname", "org.diffdb." + className + "Entry");
         
+        config.set("mapred.job.map.memory.mb", "3072");
+        config.set("mapred.job.reduce.memory.mb", "3072");
+        
         dbutil db_util = new dbutil(config);
         Job job = new Job(config, "getfasta_" + className + "_" + inputTableS);
         MultipleOutputs.setCountersEnabled(job, true);
@@ -234,7 +281,7 @@ public class getfasta extends Configured implements Tool{
         //job.setOutputFormatClass(TextOutputFormat.class); 
         MultipleOutputs.addNamedOutput(job, "existing", FileOutputFormat.class, Text.class, Text.class);
         MultipleOutputs.addNamedOutput(job, "deleted", FileOutputFormat.class, Text.class, Text.class);
-
+        
         job.waitForCompletion(true); 
         return 0;
     }

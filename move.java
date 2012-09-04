@@ -22,6 +22,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.zookeeper.*;
 import java.text.*;
 import org.apache.hadoop.hbase.zookeeper.*;
+import org.apache.zookeeper.data.*;
 //import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
  
 /* TODO:
@@ -44,7 +45,7 @@ public class move extends Configured implements Tool{
     }
 
     public int run(String[] args) throws Exception { 
-        printUsage();
+        //printUsage();
         /*
          * SETUP
          */
@@ -54,6 +55,11 @@ public class move extends Configured implements Tool{
         Date currentTime = new Date();
         Date endDate = new Date(new Long(confArg.get("timestamp_stop")));
         Boolean full_run = confArg.get("intermediate").matches("(?i).*true.*");
+        
+        //ZooKeeper setup
+        Configuration config = HBaseConfiguration.create();
+        zkWatcher = new ZooKeeperWatcher(config, "Testing", new HBaseAdmin(config));
+        zkInstance = new ZooKeeper(ZKConfig.getZKQuorumServersString(config), config.getInt("zookeeper.session.timeout", -1), zkWatcher);
         
         //Get type of movement
         toFrom type_move = checkArgs(confArg);
@@ -65,43 +71,21 @@ public class move extends Configured implements Tool{
                                    "-Dtarget_dir=" + confArg.get("base_path") + "_" + confArg.get("file_id"),
                                    "-Dtemp_hdfs_path=" + confArg.get("temp_path")
             };
+            String lockName = lock(confArg.get("file_id"));
             adddb.main(arguments);
+            unlock(lockName);
             System.exit(0);
         }
         
         //Database registration
-        Configuration config = HBaseConfiguration.create();
+        
         dbutil db_util = new dbutil(config);
         db_util.register_database(confArg.get("db_name_files"), true);
         db_util.register_database(confArg.get("db_name_runs"), true);
         db_util.register_database(confArg.get("db_name_updates"), true);
         FileSystem hdfs = FileSystem.get(config);
         
-        //Zookeeper testing
-        if(true){
-            System.out.println(getConfigString(config));
-            zkWatcher = new ZooKeeperWatcher(config, "Testing", new HBaseAdmin(config));
-            zkInstance = new ZooKeeper(ZKConfig.getZKQuorumServersString(config), config.getInt("zookeeper.session.timeout", -1), zkWatcher);
-            
-            System.out.println("Getting lock");
-            while(true) {
-                if(lock("test_lock")) {
-                    System.out.println("Got lock!");
-                    break;
-                } else {
-                    System.out.println("Lock busy!");
-                }
-            }
-            System.out.println("Sleeping for 30 seconds...");
-            Thread.sleep(30000);
-            if(unlock("test_lock")) {
-                System.out.println("Lock released");
-            } else {
-                System.out.println("Lock not released");
-            }
-            
-            return 0;
-        }
+        
         
         //Get source type
         confArg.put("source", getSource(db_util, confArg.get("db_name_files"), confArg.get("file_id")));
@@ -140,6 +124,9 @@ public class move extends Configured implements Tool{
                         getFile(hdfs, confArg, db_util);
                         // Put generated file into file database
                         putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), confArg.get("full_file_name"), confArg.get("source"));
+                    } else {
+                        System.err.println("ERROR: Remote file not found, and cannot be generated!");
+                        return 1;
                     }
             }
         } else {
@@ -216,34 +203,56 @@ public class move extends Configured implements Tool{
         Date currentTime = new Date();
         Date endDate = new Date(new Long(curConf.get("timestamp_stop")));
         curConf.put("timestamp_real", Long.toString(currentTime.getTime()));
+        
         return true;
     }
     
-    private static boolean lock(String lock) {
+    private static String lock(String lock) {
         String realPath = "";
-        String lockName = "/lock-" + lock;
+        String parent = "/lock";
+        String lockName = parent + "/" + lock;
+        
+        try{
+            if(zkInstance.exists(parent, false) == null)
+                zkInstance.create(parent, new byte [0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.fromFlag(0));
+        } catch (Exception E) {
+            System.out.println("Error creating lock node: " + E.toString());
+            E.printStackTrace();
+            return null;
+        }
+        
         List <String> children = new LinkedList<String>();
         try {
-            realPath = zkInstance.create(lockName, "/locked".getBytes(), zkInstance.getACL(lockName, zkInstance.exists(lock, false)) ,CreateMode.EPHEMERAL_SEQUENTIAL);
-            children = zkInstance.getChildren(realPath, false);
+            //List <ACL> ACLList = zkInstance.getACL(lockName, zkInstance.exists(lock, false));
+            
+            realPath = zkInstance.create(lockName, new byte [0], ZooDefs.Ids.OPEN_ACL_UNSAFE ,CreateMode.EPHEMERAL_SEQUENTIAL);
+            //children = zkInstance.getChildren(realPath, false);
+            checkLock: while(true){
+                children = zkInstance.getChildren(parent, false);
+                for(String curChild : children) {
+                    String child = parent + "/" + curChild;
+                    System.out.println(child + " " + realPath + " " + Integer.toString(child.compareTo(realPath)));
+                    if(child.compareTo(realPath) < 0) {
+                        Thread.sleep(300);
+                        continue checkLock;
+                    }
+                }
+                return realPath;
+            }
         } catch(Exception E) {
             System.out.println("While trying to get lock " + lockName);
             System.out.println("ZKException " + E.toString());
             E.printStackTrace();
-            return false;
+            return null;
         }
-        for(String curChild : children) {
-            if(curChild.compareTo(realPath) < 0) {
-                return false;
-            }
-        }
-        return true;
     }
     
     private static boolean unlock(String lock) {
         try {
             zkInstance.delete(lock, -1);
         } catch(Exception E) {
+            System.out.println("Error releasing lock: " + E.toString());
+            E.printStackTrace();
             return false;
         }
         return true;
@@ -298,8 +307,11 @@ public class move extends Configured implements Tool{
         String temp_path_base = config.get("temp_path");
         Path newPath = new Path(final_result);
         Vector<Path> ret_path = new Vector<Path>();
+        String lockName = lock(final_result.replaceAll("/", "_"));
         if(fs.exists(newPath)) {
             ret_path.add(newPath);
+            unlock(lockName);
+            config.put("full_file_name", final_result);
             return ret_path;
         } else {
             if(!config.get("source").equals("local")) {
@@ -319,6 +331,7 @@ public class move extends Configured implements Tool{
                     Throwable exception = E.getTargetException();
                     System.out.println("Exception: " + exception.toString() + "Stacktrace: ");
                     exception.printStackTrace(System.out);
+                    unlock(lockName);
                     return null;
                 }
                 FileStatus [] files = (FileStatus [])retVal;
@@ -336,6 +349,7 @@ public class move extends Configured implements Tool{
                 config.put("full_file_name", final_result);
             }
         }
+        unlock(lockName);
         return ret_path;
     }
     

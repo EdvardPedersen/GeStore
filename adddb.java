@@ -25,6 +25,12 @@ import org.apache.zookeeper.*;
  
 public class adddb extends Configured implements Tool{ 
     
+    public static enum ENTRY_COUNTER {
+        DELETED,
+        NEW,
+        EXISTING
+    }
+    
     public static class updatedbMap extends Mapper <LongWritable, Text, LongWritable, Put>{ 
         private HTable outputTable;
         private Long timestamp;
@@ -75,6 +81,7 @@ public class adddb extends Configured implements Tool{
             }
             
             if(oldEntry == null) {
+                context.getCounter(ENTRY_COUNTER.NEW).increment(1);
                 try{
                     oldEntry = (genericEntry) entryConstructor.newInstance(context.getConfiguration());
                 }catch(Exception E) {
@@ -117,7 +124,7 @@ public class adddb extends Configured implements Tool{
                 }
             }
             newPut.add("d".getBytes(), "EXISTS".getBytes(), timestamp, timestamp.toString().getBytes());
-            
+            context.getCounter(ENTRY_COUNTER.EXISTING).increment(1);
             try {
                 context.write(key, newPut);
             } catch(IOException e) {
@@ -176,7 +183,11 @@ public class adddb extends Configured implements Tool{
         config.set("start_regex", regexes[0]);
         config.set("end_regex", regexes[1]);
         
-        Job job = new Job(config, "addDb");
+        config.set("mapred.job.map.memory.mb", "3072");
+        config.set("mapred.job.reduce.memory.mb", "3072");
+        config.setBoolean("mapreduce.job.maps.speculative.execution", false);
+        
+        Job job = new Job(config, "addDb_" + type + "_" + outputTable);
         db_util.register_database(outputTable, true);
         db_util.register_database("files", true);
         db_util.register_database("db_updates", true);
@@ -234,6 +245,9 @@ public class adddb extends Configured implements Tool{
         Put update_put = db_util.getPut(outputTable);
         Date theTime = new Date();
         update_put.add("d".getBytes(), "update".getBytes(), new Long(timestamp), Long.toString(theTime.getTime()).getBytes());
+        
+        Counters allCounter = job.getCounters();
+        update_put.add("d".getBytes(), "entries".getBytes(), new Long(timestamp), Long.toString(allCounter.findCounter(ENTRY_COUNTER.EXISTING).getValue()).getBytes());
         db_util.doPut("db_updates", update_put);
         // Move to base_path
         // Add to gepan_files
