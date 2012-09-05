@@ -87,8 +87,12 @@ test_sprot:
 	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dtimestamp_stop=201002 -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dregex=OC=.* -Dpath=testfile
 	
 test_fasta:
-	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
-	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=500_pipeline_input -Dtype=r2l -Drun=500 -conf=$(JAR_PATH)gestore-conf.xml -Dpath=testfile -Dfull_run=true
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtask=1 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtask=2 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=490 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10master.fas -Drun=500 -Dtask=3 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dtype=r2l -Drun=500 -Dtask=2 -conf=$(JAR_PATH)gestore-conf.xml -Dpath=15m -Dfull_run=true
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dtype=r2l -Drun=500 -Dtask=3 -conf=$(JAR_PATH)gestore-conf.xml -Dpath=10k -Dfull_run=true
 
 test_glimmer3:
 	/opt/bio/glimmer/scripts/g3-iterated.csh /home/epe005/sequences/masterBig/10mmaster.fas glimmer3.out

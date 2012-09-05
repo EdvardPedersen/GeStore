@@ -25,6 +25,7 @@ public class fastaEntry extends genericEntry{
     
     public fastaEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
+        selfConfig = config;
     }
     
     public boolean addEntry(String entry) {
@@ -100,11 +101,6 @@ public class fastaEntry extends genericEntry{
             }
         }
         return -1;
-    }
-
-    public byte[] getRowID() {
-        String id = (String)fieldKeys.get("ID");
-        return id.getBytes();
     }
     
     public String[] get(String type, String options) {

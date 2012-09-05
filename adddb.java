@@ -163,6 +163,11 @@ public class adddb extends Configured implements Tool{
         HBaseAdmin hbAdmin = new HBaseAdmin(config);
         dbutil db_util = new dbutil(config);
         
+        config.set("run_id", argConf.get("run_id", ""));
+        config.set("task_id", argConf.get("task_id", ""));
+        
+        System.out.println("Run_id " + config.get("run_id"));
+        
         config.set(TableOutputFormat.OUTPUT_TABLE, db_util.getRealName(outputTable));
         //config.set("outputTable", outputTable);
         config.set("timestamp", timestamp);
@@ -242,7 +247,7 @@ public class adddb extends Configured implements Tool{
         file_put.add("d".getBytes(), "source".getBytes(), type.getBytes());
         db_util.doPut("files", file_put);
         
-        Put update_put = db_util.getPut(outputTable);
+        Put update_put = db_util.getPut(outputTable + config.get("run_id") + "_" + config.get("task_id"));
         Date theTime = new Date();
         update_put.add("d".getBytes(), "update".getBytes(), new Long(timestamp), Long.toString(theTime.getTime()).getBytes());
         

@@ -28,6 +28,7 @@ public class priamEntry extends genericEntry{
         } catch (IOException E) {
             System.out.println("Error generating filesystem: " + E.toString());
         }
+        selfConfig = config;
     }
     
     public priamEntry() {
@@ -136,12 +137,6 @@ public class priamEntry extends genericEntry{
             }
         }
         return -1;
-    }
-
-    // Gets the ID of the row
-    public byte[] getRowID() {
-        String idStripped = (String)fieldKeys.get("ID").trim();
-        return idStripped.getBytes();
     }
     
     // Returns an array of strings containing each field based on type and options

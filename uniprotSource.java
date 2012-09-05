@@ -21,7 +21,7 @@ public class uniprotSource implements sourceType{
                                 "-Dregex=" + params.get("delimiter"), 
                                 "-Daddendum=" + params.get("taxon"),
                                 "-Dtype=FASTA",
-                                "-Dclassname=uniprot" };
+                                "-Dclassname=uniprot"};
         fs.delete(new Path(temp_dir), true);
         getfasta.main(submission);
         String result_path_existing = temp_dir + "/existing-r-00000";

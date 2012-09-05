@@ -178,7 +178,13 @@ public class getfasta extends Configured implements Tool{
             Long timestamp_stop = new Long(context.getConfiguration().get("timestamp"));
             timestamp_stop += 1;
             String table_name = "gestore_db_updates";
-            String row_name = dbutil.getShortName(context.getConfiguration().get(TableInputFormat.INPUT_TABLE));
+            String runId = context.getConfiguration().get("run_id");
+            String taskId = context.getConfiguration().get("task_id");
+            if(runId == null)
+                runId = "";
+            if(taskId == null)
+                taskId = "";
+            String row_name = dbutil.getShortName(context.getConfiguration().get(TableInputFormat.INPUT_TABLE)) + runId + "_" + taskId;
             String family = "d";
             String column_name = "entries";
             
@@ -191,6 +197,7 @@ public class getfasta extends Configured implements Tool{
             full_entries_get.setTimeRange(timestamp_start, timestamp_stop);
             full_entries_get.addColumn(family.getBytes(), column_name.getBytes());
             Result entries_res = updates.get(full_entries_get);
+            System.out.println("Table: " + table_name + " row:" +  row_name + " column: " + column_name);
             KeyValue run_file_prev = entries_res.getColumnLatest(family.getBytes(), column_name.getBytes());
             String lastEntries = new String(run_file_prev.getValue());
             
@@ -237,6 +244,21 @@ public class getfasta extends Configured implements Tool{
         String type = argConf.get("type");
         String className = argConf.get("classname", "uniprot");
         
+        String runId = argConf.get("run_id", "");
+        String taskId = argConf.get("task_id", "");
+        
+        String startRow = "";
+        String endRow = "";
+        
+        if(!runId.isEmpty()) {
+            startRow = runId;
+            endRow = Integer.toString(1 + new Integer(runId));
+        }
+        if(!taskId.isEmpty()) {
+            startRow = startRow + "_" + taskId;
+            endRow = startRow + "_" + Integer.toString(1 + new Integer(taskId));
+        }
+        
         System.out.println(outputFile);
         
         Configuration config = HBaseConfiguration.create();
@@ -250,6 +272,9 @@ public class getfasta extends Configured implements Tool{
         
         config.set("mapred.job.map.memory.mb", "3072");
         config.set("mapred.job.reduce.memory.mb", "3072");
+        
+        config.set("run_id", runId);
+        config.set("task_id", taskId);
         
         dbutil db_util = new dbutil(config);
         Job job = new Job(config, "getfasta_" + className + "_" + inputTableS);
@@ -266,6 +291,10 @@ public class getfasta extends Configured implements Tool{
         Scan ourScan = new Scan();
         ourScan.setCaching(500);
         ourScan.setCacheBlocks(false);
+        if(!startRow.isEmpty() && !endRow.isEmpty()) {
+            ourScan.setStartRow(startRow.getBytes());
+            ourScan.setStopRow(endRow.getBytes());
+        }
         Long timestampS = new Long(timestampStart);
         Long timestampE = new Long(timestampStop);
         timestampE += 1;

@@ -21,6 +21,7 @@ import org.apache.hadoop.hbase.client.Result;
 public class uniprotEntry extends genericEntry{
     public uniprotEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
+        selfConfig = config;
     }
     
     public uniprotEntry() {

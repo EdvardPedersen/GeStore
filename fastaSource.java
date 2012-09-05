@@ -21,7 +21,10 @@ public class fastaSource implements sourceType{
                                 "-Dregex=" + params.get("delimiter"), 
                                 "-Daddendum=" + params.get("taxon"),
                                 "-Dtype=FASTA",
-                                "-Dclassname=fasta" };
+                                "-Dclassname=fasta",
+                                "-Drun_id=" + params.get("run_id"),
+                                "-Dtask_id" + params.get("task_id")
+        };
         fs.delete(new Path(temp_dir), true);
         getfasta.main(submission);
         String result_path_existing = temp_dir + "/existing-r-00000";

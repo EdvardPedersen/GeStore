@@ -23,6 +23,7 @@ public class pfamEntry extends genericEntry{
     Pattern matchPattern = Pattern.compile("^#=[a-zA-Z][a-zA-Z]\\s[a-zA-Z][a-zA-Z]");
     public pfamEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
+        selfConfig = config;
     }
     
     public pfamEntry() {
@@ -110,12 +111,6 @@ public class pfamEntry extends genericEntry{
             }
         }
         return -1;
-    }
-
-    // Gets the ID of the row
-    public byte[] getRowID() {
-        String idStripped = (String)fieldKeys.get("ID").trim();
-        return idStripped.getBytes();
     }
     
     // Returns an array of strings containing each field based on type and options

@@ -21,6 +21,7 @@ import org.apache.hadoop.hbase.client.Result;
 public class glimmerpredictEntry extends genericEntry{
     public glimmerpredictEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
+        selfConfig = config;
     }
     
     public glimmerpredictEntry() {
@@ -99,11 +100,6 @@ public class glimmerpredictEntry extends genericEntry{
             }
         }
         return -1;
-    }
-
-    public byte[] getRowID() {
-        String id = (String)fieldKeys.get("ID");
-        return id.getBytes();
     }
     
     public String[] get(String type, String options) {

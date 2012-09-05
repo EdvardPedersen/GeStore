@@ -64,15 +64,21 @@ public class move extends Configured implements Tool{
         //Get type of movement
         toFrom type_move = checkArgs(confArg);
         if(type_move == toFrom.LOCAL2REMOTE && !confArg.get("format").equals("unknown")) {
-            String [] arguments = {"-Dinput=" + confArg.get("local_path"),
-                                   "-Dtable=" + confArg.get("file_id"),
-                                   "-Dtimestamp=" + confArg.get("timestamp_stop"),
-                                   "-Dtype=" + confArg.get("format"),
-                                   "-Dtarget_dir=" + confArg.get("base_path") + "_" + confArg.get("file_id"),
-                                   "-Dtemp_hdfs_path=" + confArg.get("temp_path")
-            };
+            List<String> arguments = new ArrayList<String>();
+            arguments.add("-Dinput=" + confArg.get("local_path"));
+            arguments.add("-Dtable=" + confArg.get("file_id"));
+            arguments.add("-Dtimestamp=" + confArg.get("timestamp_stop"));
+            arguments.add("-Dtype=" + confArg.get("format"));
+            arguments.add("-Dtarget_dir=" + confArg.get("base_path") + "_" + confArg.get("file_id"));
+            arguments.add("-Dtemp_hdfs_path=" + confArg.get("temp_path"));
+            arguments.add("-Drun_id=" + confArg.get("run_id"));
+            if(!confArg.get("run_id").isEmpty())
+                arguments.add("-Drun_id=" +confArg.get("run_id"));
+            if(!confArg.get("task_id").isEmpty())
+                arguments.add("-Dtask_id=" + confArg.get("task_id"));
             String lockName = lock(confArg.get("file_id"));
-            adddb.main(arguments);
+            String [] argumentString = arguments.toArray(new String [arguments.size()]);
+            adddb.main(argumentString);
             unlock(lockName);
             System.exit(0);
         }
@@ -180,7 +186,8 @@ public class move extends Configured implements Tool{
         }
         
         //Input paramaters
-        curConf.put("run_id", argConf.get("run", "1"));
+        curConf.put("run_id", argConf.get("run", ""));
+        curConf.put("task_id", argConf.get("task", ""));
         curConf.put("file_id", argConf.get("file"));
         curConf.put("local_path", argConf.get("path", ""));
         curConf.put("type", argConf.get("type", "l2r"));
@@ -357,7 +364,8 @@ public class move extends Configured implements Tool{
         if(!config.get("timestamp_stop").equals(Integer.toString(Integer.MAX_VALUE))) {
             return new Long(config.get("timestamp_stop"));
         }
-        Get timestampGet = new Get(config.get("file_id").getBytes());
+        String rowName = config.get("file_id") + config.get("run_id") + "_" + config.get("task_id");
+        Get timestampGet = new Get(rowName.getBytes());
         timestampGet.addColumn("d".getBytes(), "update".getBytes());
         Result timestampResult = db_util.doGet(config.get("db_name_updates"), timestampGet);
         KeyValue tsKv = timestampResult.getColumnLatest("d".getBytes(), "update".getBytes());

@@ -25,6 +25,7 @@ public class hmmEntry extends genericEntry{
     public hmmEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
         fieldKeys.put("ORDER", "");
+        selfConfig = config;
     }
     
     public hmmEntry() {
@@ -121,12 +122,6 @@ public class hmmEntry extends genericEntry{
             }
         }
         return -1;
-    }
-
-    // Gets the ID of the row
-    public byte[] getRowID() {
-        String idStripped = (String)fieldKeys.get("ID").trim();
-        return idStripped.getBytes();
     }
     
     // Returns an array of strings containing each field based on type and options

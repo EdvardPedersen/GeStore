@@ -24,6 +24,7 @@ public abstract class genericEntry{
     protected int numEntries = 0;
     protected int keyV = 0;
     protected byte[] family = "d".getBytes();
+    protected Configuration selfConfig;
     
     /********************************************
      * Abstract methods
@@ -46,11 +47,6 @@ public abstract class genericEntry{
     public abstract int sanityCheck(String type);
     
     /*
-     * Returns the row ID of the entry
-     */
-    public abstract byte[] getRowID();
-    
-    /*
      * Generate output in the given format, with optional options
      */
     public abstract String[] get(String type, String options);
@@ -64,11 +60,26 @@ public abstract class genericEntry{
      * Implemented methods
      * ******************************************/
     
+    /*
+     * Returns the row ID of the entry
+     */
+    public byte[] getRowID() {
+        String idStripped = (String)fieldKeys.get("ID").trim();
+        if(selfConfig.get("task_id") != null) {
+            idStripped = selfConfig.get("task_id") + "_" + idStripped;
+        }
+        if(selfConfig.get("run_id") != null) {
+            idStripped = selfConfig.get("run_id") + "_" + idStripped;
+        }
+        return idStripped.getBytes();
+    }
+    
     /* 
      * Constructor
      */
     public genericEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
+        selfConfig = config;
     }
     
     public genericEntry() {

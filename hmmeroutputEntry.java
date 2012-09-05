@@ -44,6 +44,7 @@ public class hmmeroutputEntry extends genericEntry{
                                 "description" };
     public hmmeroutputEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
+        selfConfig = config;
     }
     
     public hmmeroutputEntry() {
@@ -127,12 +128,6 @@ public class hmmeroutputEntry extends genericEntry{
             }
         }
         return 1;
-    }
-
-    // Gets the ID of the row
-    public byte[] getRowID() {
-        String id = (String)fieldKeys.get("ID").trim();
-        return id.getBytes();
     }
     
     // Returns an array of strings containing each field based on type and options
