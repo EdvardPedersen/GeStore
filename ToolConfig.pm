@@ -229,6 +229,29 @@ sub getGsInputFormat{
     return $self->{'gs_input_format'};
 }
 
+=head2 B<setGsExporterOutputFormat(format)>
+
+Sets format of output files.
+
+=cut
+
+sub setGsExporterOutputFormat{
+    my ($self,$format) = @_;
+    $self->{'gs_exporter_output_format'} = $format;
+}
+
+
+=head2 B<getGsExporterOutputFormat()>
+
+Returns format of output file for this tool.
+
+=cut
+
+sub getGsExporterOutputFormat{
+    my $self = shift;
+    return $self->{'gs_exporter_output_format'};
+}
+
 =head2 B<getInputSequenceType()>
 
 Returns the input type this tool can be run on.

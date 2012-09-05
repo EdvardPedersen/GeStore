@@ -11,4 +11,5 @@
     <parser>GePan::Parser::Prediction::Cds::Glimmer3</parser>
     <gs_input_format>fasta</gs_input_format>
     <gs_output_format>glimmerpredict</gs_output_format>
+    <gs_exporter_output_format>fasta</gs_exporter_output_format>
 </tool>
