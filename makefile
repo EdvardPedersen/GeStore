@@ -5,8 +5,12 @@ INPUT_SOURCE = LongRecordReader.java DatInputFormat.java
 EXPERIMENT_SOURCES = countupdates.java cleandb.java
 DEPRECATED_SOURCE = cmpdb.java countupdates.java getdat.java getdeleted.java annotateBlastRes.java blastoutputformat.java combineBlastOutput.java
 SOURCES = $(ENTRY_SOURCES) $(SOURCE_SOURCES) $(APPLICATION_SOURCE) $(INPUT_SOURCE) $(EXPERIMENT_SOURCES)
-CLASSPATH_JAVA = /usr/lib/hadoop-0.20/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.
-JAR_PATH = /home/epe005/GeStoreGit/GeStore/
+#CLASSPATH_JAVA = /usr/lib/hadoop-0.20-mapreduce/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.
+#CLASSPATH_JAVA = /usr/lib/hadoop-0.20-mapreduce/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.
+#CLASSPATH_JAVA = /usr/lib/hadoop/hadoop-common-2.0.0-cdh4.0.1.jar:/usr/lib/hadoop-0.20-mapreduce/hadoop-2.0.0-mr1-cdh4.0.1-core.jar:/usr/lib/hbase/hbase.jar:/usr/lib/hadoop-hdfs/hadoop-hdfs-2.0.0-cdh4.0.1.jar:/home/epe005/GeStore/diffdb_classes/:/usr/lib/zookeeper/zookeeper-3.4.3-cdh4.0.1.jar:.
+CLASSPATH_JAVA = /usr/lib/hadoop/client-0.20/*:/usr/lib/hbase/hbase.jar:/home/epe005/GeStore/diffdb_classes/:/usr/lib/zookeeper/zookeeper-3.4.3-cdh4.0.1.jar:.
+#CLASSPATH_JAVA = /etc/hadoop/conf:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-0.20-mapreduce/./:/usr/lib/hadoop-0.20-mapreduce/lib/*:/usr/lib/hadoop-0.20-mapreduce/.//*
+JAR_PATH = /home/epe005/GeStore/
 INPUT_DIR = /home/epe005/test_databases/
 OUTPUT_DIR = /user/epe005/output/
 SPROT_7_FILE = sprot_2011_07.dat
@@ -18,7 +22,7 @@ REAL_RUN = `date +%s`
 all:    $(SOURCES)
 	rm -rf diffdb_classes/
 	mkdir diffdb_classes
-	javac -Xlint:unchecked -classpath $(CLASSPATH_JAVA) -d diffdb_classes $(SOURCES)
+	javac -Xlint:unchecked -Xlint:deprecation -classpath $(CLASSPATH_JAVA) -d diffdb_classes $(SOURCES)
 	jar -cvf diffdb.jar -C diffdb_classes/ .
 
 update:
@@ -30,6 +34,13 @@ test_all:
 	make test_sprot
 	make test_fasta
 	make test_glimmer3
+
+test_uniprot:
+	#Add uniprot file
+	#Generate database
+	#add newer uniprot file
+	#Generate intermediate database
+	#generate old database
 
 run_pipeline:
 	#Glimmer
@@ -87,12 +98,12 @@ test_sprot:
 	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=sprot -Dtimestamp_stop=201002 -Dtype=r2l -conf=$(JAR_PATH)gestore-conf.xml -Dregex=OC=.* -Dpath=testfile
 	
 test_fasta:
-	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtask=1 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
-	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtask=2 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
-	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=490 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
-	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10master.fas -Drun=500 -Dtask=3 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
-	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dtype=r2l -Drun=500 -Dtask=2 -conf=$(JAR_PATH)gestore-conf.xml -Dpath=15m -Dfull_run=true
-	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dtype=r2l -Drun=500 -Dtask=3 -conf=$(JAR_PATH)gestore-conf.xml -Dpath=10k -Dfull_run=true
+	hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=/home/epe005/input_data/ecoli-64000.fas -Drun=500 -Dtask=1 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=500 -Dtask=2 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10mmaster.fas -Drun=490 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dpath=$(INPUT_DIR)../sequences/masterBig/10master.fas -Drun=500 -Dtask=3 -Dtimestamp_stop=$(REAL_RUN) -Dformat=fasta -Dtype=l2r -conf=$(JAR_PATH)gestore-conf.xml
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dtype=r2l -Drun=500 -Dtask=2 -conf=$(JAR_PATH)gestore-conf.xml -Dpath=15m -Dfull_run=true
+	#hadoop jar $(JAR_PATH)diffdb.jar org.diffdb.move -Dfile=test_fasta -Dtype=r2l -Drun=500 -Dtask=3 -conf=$(JAR_PATH)gestore-conf.xml -Dpath=10k -Dfull_run=true
 
 test_glimmer3:
 	/opt/bio/glimmer/scripts/g3-iterated.csh /home/epe005/sequences/masterBig/10mmaster.fas glimmer3.out

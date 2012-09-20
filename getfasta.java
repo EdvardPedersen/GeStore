@@ -289,7 +289,7 @@ public class getfasta extends Configured implements Tool{
         }
         
         Scan ourScan = new Scan();
-        ourScan.setCaching(500);
+        ourScan.setCaching(100);
         ourScan.setCacheBlocks(false);
         if(!startRow.isEmpty() && !endRow.isEmpty()) {
             ourScan.setStartRow(startRow.getBytes());

@@ -26,6 +26,7 @@ public class uniprotSource implements sourceType{
         getfasta.main(submission);
         String result_path_existing = temp_dir + "/existing-r-00000";
         String result_path_deleted = temp_dir + "/deleted-r-00000";
+        String result_path_metadata = temp_dir + "/metadata-r-00000";
         //fs.rename(new Path(resultPath), new Path(final_result));
         
         local_file_system.delete(new Path(real_temp_path + "*"), true);
@@ -34,10 +35,12 @@ public class uniprotSource implements sourceType{
             fs.copyToLocalFile(true, new Path(result_path_existing), new Path(real_temp_path));
         if(fs.exists(new Path(result_path_deleted)))
             fs.copyToLocalFile(true, new Path(result_path_deleted), new Path(real_temp_path + ".deleted"));
+        if(fs.exists(new Path(result_path_metadata))) 
+            fs.copyToLocalFile(true, new Path(result_path_metadata), new Path(real_temp_path + ".metadata"));
         fs.delete(new Path(temp_dir), true);
         // Run formatdb
         // Needs to be moved to somewhere else!
-        String line = "/opt/bio/ncbi/bin/formatdb -t " + params.get("file_id") + " -p T -i " + params.get("file_id");
+        String line = "formatdb -t " + params.get("file_id") + " -p T -i " + params.get("file_id");
         System.out.println("Running command: " + line);
         Runtime ourRuntime = Runtime.getRuntime();
         File workingDir = new File(params.get("temp_path_base"));

@@ -108,6 +108,10 @@ public class move extends Configured implements Tool{
         String last_timestamp = new String("0");
         if(null != run_file_prev && !confArg.get("source").equals("local")) {
             last_timestamp = new String(run_file_prev.getValue());
+            Integer lastTimestamp = new Integer(last_timestamp);
+            lastTimestamp += 1;
+            last_timestamp = lastTimestamp.toString();
+            System.out.println("Last timestamp: " + last_timestamp + "End date:" + endDate);
             Date last_run = new Date(run_file_prev.getTimestamp());
             if(last_run.before(endDate) && !full_run) {
                 confArg.put("timestamp_start", last_timestamp);
@@ -365,10 +369,19 @@ public class move extends Configured implements Tool{
             return new Long(config.get("timestamp_stop"));
         }
         String rowName = config.get("file_id") + config.get("run_id") + "_" + config.get("task_id");
+        System.out.println(rowName);
         Get timestampGet = new Get(rowName.getBytes());
         timestampGet.addColumn("d".getBytes(), "update".getBytes());
         Result timestampResult = db_util.doGet(config.get("db_name_updates"), timestampGet);
         KeyValue tsKv = timestampResult.getColumnLatest("d".getBytes(), "update".getBytes());
+        if(tsKv == null) {
+	  System.out.println("Probably a meta-data collection...");
+	  rowName = config.get("file_id") + "_";
+	  timestampGet = new Get(rowName.getBytes());
+	  timestampGet.addColumn("d".getBytes(), "update".getBytes());
+	  timestampResult = db_util.doGet(config.get("db_name_updates"), timestampGet);
+	  tsKv = timestampResult.getColumnLatest("d".getBytes(), "update".getBytes());
+        }
         Long latestVersion = new Long(tsKv.getTimestamp());
         return latestVersion;
     }
