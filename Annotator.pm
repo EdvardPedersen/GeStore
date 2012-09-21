@@ -165,7 +165,7 @@ sub _runAParser{
 
 
     foreach my $s(@{$parser->getCollection()->getList()}){
-	$logger->LogError("Element ".$s->getID()." does not exists or has no sequence_annotation object") unless ($collection->getElementByID($s->getID()));
+	$logger->LogError("Element ".$s->getID()." does not exists or has no sequence_annotation object(Class ".$class.")") unless ($collection->getElementByID($s->getID()));
 	my $seq = $collection->getElementByID($s->getID());
 	$seq->getAnnotation()->getAttributeCollection()->addElement($s);
     }
