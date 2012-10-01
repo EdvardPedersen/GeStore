@@ -805,8 +805,11 @@ sub _printSchedulerShell{
     # copy nucleotide fasta over to input
     if($params->{'gestore'})
     {
-        print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."nucleotide_exporter.fas -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
-        print IN "mv ".$params->{'script_id'}."nucleotide_exporter.fas exporter.fas\n";
+        #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."nucleotide_exporter.fas -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
+        _printGeStoreCall(*IN, {'filename'=>"nucleotide_exporter.fas",
+				 'run'=>$params->{'script_id'},
+				 'type'=>'r2l'});
+        print IN "mv nucleotide_exporter.fas exporter.fas\n";
         print IN "mv exporter.fas ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/'."\n";
     } else {
         # copy nucleotide fasta over to input
