@@ -712,11 +712,11 @@ sub _printExporterShellCall{
     {
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."input.fas.".$config->getID().".out -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
         _printGeStoreCall(*IN, {'filename'=>"input.fas.".$config->getID().".out",
-				  'run'=>$params{'script_id'},
+				  'run'=>$params->{'script_id'},
 				  'type'=>'r2l'});
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."input.fas -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
         _printGeStoreCall(*IN, {'filename'=>"input.fas",
-				  'run'=>$params{'script_id'},
+				  'run'=>$params->{'script_id'},
 				  'type'=>'r2l'});
         #print IN "mv ".$params->{'script_id'}."input.fas input.fas\n";
         #print IN "mv input.fas ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/input/input.fas'."\n";
@@ -754,7 +754,7 @@ sub _printExporterShellCall{
         {
             #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."".$_."_exporter.fas -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/'."output/$_/exporter.fas -D type=l2r -D format=".$config->getGsExporterOutputFormat()." -conf=".GESTORE_CONFIG."\n";
             _printGeStoreCall(*IN, {'filename'=>$_."exporter.fas",
-				  'run'=>$params{'script_id'},
+				  'run'=>$params->{'script_id'},
 				  'type'=>'l2r',
 				  'format'=>$config->getGsExporterOutputFormat()});
         } else {
@@ -767,7 +767,7 @@ sub _printExporterShellCall{
     if($params->{'gestore'})
     {
 	_printGeStoreCall(*IN, {'filename'=>"collection.xml",
-				  'run'=>$params{'script_id'},
+				  'run'=>$params->{'script_id'},
 				  'path'=>NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/collection.xml',
 				  'type'=>'l2r'});
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."collection.xml -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/collection.xml'." -D type=l2r -conf=".GESTORE_CONFIG."\n";
