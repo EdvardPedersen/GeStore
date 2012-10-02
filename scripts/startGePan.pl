@@ -756,6 +756,7 @@ sub _printExporterShellCall{
             _printGeStoreCall(*IN, {'filename'=>$_."_exporter.fas",
 				  'run'=>$params->{'script_id'},
 				  'type'=>'l2r',
+				  'path'=>NODE_LOCAL_PATH."/gepan/".'$JOB_ID/'."output/$_/exporter.fas",
 				  'format'=>$config->getGsExporterOutputFormat()});
         } else {
             print IN "mv ".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/'."output/$_/exporter.fas ".$params->{'data_files_dir'}."/".$config->getOutputSequenceType()."/$_/\n";
