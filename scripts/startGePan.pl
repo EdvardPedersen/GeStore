@@ -753,7 +753,7 @@ sub _printExporterShellCall{
         if($params->{'gestore'})
         {
             #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."".$_."_exporter.fas -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/".'$JOB_ID/'."output/$_/exporter.fas -D type=l2r -D format=".$config->getGsExporterOutputFormat()." -conf=".GESTORE_CONFIG."\n";
-            _printGeStoreCall(*IN, {'filename'=>$_."exporter.fas",
+            _printGeStoreCall(*IN, {'filename'=>$_."_exporter.fas",
 				  'run'=>$params->{'script_id'},
 				  'type'=>'l2r',
 				  'format'=>$config->getGsExporterOutputFormat()});
