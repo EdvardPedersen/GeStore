@@ -989,7 +989,7 @@ sub _printSingleShellCall{
             my $filename = "input.fas.".$config->getID().".out";
             my $localFile = NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/input.fas.'.$config->getID().'.out.predict';
             #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."".$filename." -D run=".$params->{'script_id'}." -D path=".$localFile." -D type=l2r -D format=glimmerpredict -conf=".GESTORE_CONFIG."\n";
-            _printGeStoreCall(*IN, {'file'=>$filename, 'path'=>$localfile, 'run'=>$params->{'script_id'}, 'format'=>$config->getGsOutputFormat(), 'type'=>"l2r"});
+            _printGeStoreCall(*IN, {'file'=>$filename, 'path'=>$localFile, 'run'=>$params->{'script_id'}, 'format'=>$config->getGsOutputFormat(), 'type'=>"l2r"});
         } else {
             print IN 'mv '.NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/input.fas.'.$config->getID().'.out.predict '.$params->{'tool_files_dir'}."/".$config->getID()."/input.fas.".$config->getID().".out\n";
         }
