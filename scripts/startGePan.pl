@@ -611,7 +611,7 @@ sub _printAnnotatorShell{
             {
 		_printGeStoreCall(*IN, {'file'=>"nucleotide_scheduler", 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
 		print IN "mv nucleotide_scheduler ".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/data/cds/ ./*.${SGE_TASK_ID}'."\n";
-		_printGeStoreCall(*IN, {'file'=>$config->getID()."_out.tar", 'task'=>{'${SGE_TASK_ID}'} 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
+		_printGeStoreCall(*IN, {'file'=>$config->getID()."_out.tar", 'task'=>'${SGE_TASK_ID}', 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
 		
                 #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."nucleotide_scheduler -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}_${SGE_TASK_ID}/data/cds/ -D type=r2l -conf='.GESTORE_CONFIG."\n";
                 # print IN "tar -xf nucleotide_scheduler.tar --directory=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/data/cds/ ./*.${SGE_TASK_ID}'."\n";
