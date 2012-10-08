@@ -953,8 +953,8 @@ sub _printSingleShellCall{
     if($params->{'gestore'})
     {
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."$input_file -D run=".$params->{'script_id'}." -D path=$input_file_path/$input_file -D type=l2r -D format=fasta -conf=".GESTORE_CONFIG."\n";
-        _printGeStoreCall(*IN, {'file'=>'input.fas', 'run'=>$params->{'script_id'}, 'path'=>$input_file_path."/".$input_file, 'type'=>"l2r", 'format'=>'fasta'});
-        _printGeStoreCall(*IN, {'file'=>'input.fas', 'run'=>$params->{'script_id'}, 'type'=>"r2l"});
+        _printGeStoreCall(*IN, {'file'=>$input_file, 'run'=>$params->{'script_id'}, 'path'=>$input_file_path."/".$input_file, 'type'=>"l2r", 'format'=>'fasta'});
+        _printGeStoreCall(*IN, {'file'=>$input_file', 'run'=>$params->{'script_id'}, 'type'=>"r2l"});
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."$input_file -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/\$JOB_ID/input/ -D type=r2l -conf=".GESTORE_CONFIG."\n";
         print IN "mv $input_file ".NODE_LOCAL_PATH."/gepan/\$JOB_ID/input/$input_file\n";
     } else {
