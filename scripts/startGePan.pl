@@ -344,11 +344,13 @@ sub _printArrayShell{
     # create input file path and copy it to node
     if($params->{'gestore'})
     {
-        _printGeStoreCall( *IN, {'filename'=>$config->getInputType()."_scheduler.tar", 
+        _printGeStoreCall( *IN, {'filename'=>$config->getInputType()."_scheduler", 
                                  'type'=>"r2l", 
-                                 'run'=>$params->{'script_id'} } );
+                                 'run'=>$params->{'script_id'},
+                                 'task'=>'${SGE_TASK_ID}'} );
         #print IN 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file='.$params->{'script_id'}.$config->getInputType()."_scheduler.tar -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
-        print IN "tar -xf ".$config->getInputType()."_scheduler.tar --directory=".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/input/ ./exporter.fas.$SGE_TASK_ID'."\n";
+        #print IN "tar -xf ".$config->getInputType()."_scheduler --directory=".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/input/ ./exporter.fas.$SGE_TASK_ID'."\n";
+        print IN "mv ".$config->getInputType()."_scheduler ".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/input/ ./exporter.fas.$SGE_TASK_ID'."\n";
     } else {
         my $input = $params->{'data_files_dir'}."/".$config->getInputSequenceType()."/".$config->getInputType().'/tmp/exporter.fas.$SGE_TASK_ID';
         print IN "\n# Copy input files to node\n";
@@ -552,8 +554,8 @@ sub _printAnnotatorShell{
     print IN "\n# copy parameter.xml to node\n";
     if($params->{'gestore'})
     {
-	_printGeStoreCall(*IN, {'file'=>"parameter.xml", 'run'=>$params->{'script_id'}, 'path'=>$params->{'work_dir'}."/parameter.xml", 'type'=>'l2r'});
-	_printGeStoreCall(*IN, {'file'=>"parameter.xml", 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
+	_printGeStoreCall(*IN, {'filename'=>"parameter.xml", 'run'=>$params->{'script_id'}, 'path'=>$params->{'work_dir'}."/parameter.xml", 'type'=>'l2r'});
+	_printGeStoreCall(*IN, {'filename'=>"parameter.xml", 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."parameter.xml -D run=".$params->{'script_id'}." -D path=".$params->{'work_dir'}."/parameter.xml -D type=l2r -conf=".GESTORE_CONFIG."\n";
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."parameter.xml -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
         print IN "mv parameter.xml ".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/'."\n";
@@ -589,7 +591,7 @@ sub _printAnnotatorShell{
                 {
                     #UGLY HACK! Should replace entire code segment -epe
                     #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."collection.xml -D run=".$params->{'script_id'}." -D path=".$params->{'data_files_dir'}."/".$config->getOutputSequenceType()."/ -D type=r2l -conf=".GESTORE_CONFIG."\n";
-                    _printGeStoreCall(*IN, {'file'=>"collection.xml", 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
+                    _printGeStoreCall(*IN, {'filename'=>"collection.xml", 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
                     print IN "mv collection.xml ".$params->{'data_files_dir'}."/".$config->getOutputSequenceType()."/\n";
                 }
                 
@@ -609,9 +611,9 @@ sub _printAnnotatorShell{
 	    # copy one fasta file over
             if($params->{'gestore'})
             {
-		_printGeStoreCall(*IN, {'file'=>"nucleotide_scheduler", 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
+		_printGeStoreCall(*IN, {'filename'=>"nucleotide_scheduler", 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
 		print IN "mv nucleotide_scheduler ".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/data/cds/ ./*.${SGE_TASK_ID}'."\n";
-		_printGeStoreCall(*IN, {'file'=>$config->getID()."_out.tar", 'task'=>'${SGE_TASK_ID}', 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
+		_printGeStoreCall(*IN, {'filename'=>$config->getID()."_out.tar", 'task'=>'${SGE_TASK_ID}', 'run'=>$params->{'script_id'}, 'type'=>'r2l'});
 		
                 #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."nucleotide_scheduler -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}_${SGE_TASK_ID}/data/cds/ -D type=r2l -conf='.GESTORE_CONFIG."\n";
                 # print IN "tar -xf nucleotide_scheduler.tar --directory=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/data/cds/ ./*.${SGE_TASK_ID}'."\n";
@@ -639,7 +641,7 @@ sub _printAnnotatorShell{
     {
         print IN "tar -cf results.tar --directory=".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/results/ .'."\n";
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."annotator.".'${SGE_TASK_ID}'.".tar -D run=".$params->{'script_id'}." -D path=results.tar -D type=l2r -conf=".GESTORE_CONFIG."\n";
-        _printGeStoreCall(*IN, {'file'=>"annotator.tar", 'run'=>$params->{'script_id'}, 'task'=>'${SGE_TASK_ID}', 'type'=>"l2r", 'path'=>"results.tar"});
+        _printGeStoreCall(*IN, {'filename'=>"annotator.tar", 'run'=>$params->{'script_id'}, 'task'=>'${SGE_TASK_ID}', 'type'=>"l2r", 'path'=>"results.tar"});
         #BAD BAD BAD! Hack to produce results since annotator.TASK_ID.tar is hard to get in and out reliably from GeStore
         # proper solutions: synchronization? support for wildcards? in-system archive support? alternate timestamp format?
         print IN "mv ".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/results/* '.$params->{'work_dir'}."/results/\n";
@@ -953,8 +955,8 @@ sub _printSingleShellCall{
     if($params->{'gestore'})
     {
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."$input_file -D run=".$params->{'script_id'}." -D path=$input_file_path/$input_file -D type=l2r -D format=fasta -conf=".GESTORE_CONFIG."\n";
-        _printGeStoreCall(*IN, {'file'=>$input_file, 'run'=>$params->{'script_id'}, 'path'=>$input_file_path."/".$input_file, 'type'=>"l2r", 'format'=>'fasta'});
-        _printGeStoreCall(*IN, {'file'=>$input_file, 'run'=>$params->{'script_id'}, 'type'=>"r2l"});
+        _printGeStoreCall(*IN, {'filename'=>$input_file, 'run'=>$params->{'script_id'}, 'path'=>$input_file_path."/".$input_file, 'type'=>"l2r", 'format'=>'fasta'});
+        _printGeStoreCall(*IN, {'filename'=>$input_file, 'run'=>$params->{'script_id'}, 'type'=>"r2l"});
         #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."$input_file -D run=".$params->{'script_id'}." -D path=".NODE_LOCAL_PATH."/gepan/\$JOB_ID/input/ -D type=r2l -conf=".GESTORE_CONFIG."\n";
         print IN "mv $input_file ".NODE_LOCAL_PATH."/gepan/\$JOB_ID/input/$input_file\n";
     } else {
@@ -989,7 +991,7 @@ sub _printSingleShellCall{
             my $filename = "input.fas.".$config->getID().".out";
             my $localFile = NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/input.fas.'.$config->getID().'.out.predict';
             #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}."".$filename." -D run=".$params->{'script_id'}." -D path=".$localFile." -D type=l2r -D format=glimmerpredict -conf=".GESTORE_CONFIG."\n";
-            _printGeStoreCall(*IN, {'file'=>$filename, 'path'=>$localFile, 'run'=>$params->{'script_id'}, 'format'=>$config->getGsOutputFormat(), 'type'=>"l2r"});
+            _printGeStoreCall(*IN, {'filename'=>$filename, 'path'=>$localFile, 'run'=>$params->{'script_id'}, 'format'=>$config->getGsOutputFormat(), 'type'=>"l2r"});
         } else {
             print IN 'mv '.NODE_LOCAL_PATH.'/gepan/$JOB_ID/output/input.fas.'.$config->getID().'.out.predict '.$params->{'tool_files_dir'}."/".$config->getID()."/input.fas.".$config->getID().".out\n";
         }
