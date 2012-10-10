@@ -348,8 +348,6 @@ sub _printArrayShell{
                                  'type'=>"r2l", 
                                  'run'=>$params->{'script_id'},
                                  'task'=>'${SGE_TASK_ID}'} );
-        #print IN 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file='.$params->{'script_id'}.$config->getInputType()."_scheduler.tar -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
-        #print IN "tar -xf ".$config->getInputType()."_scheduler --directory=".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/input/ ./exporter.fas.$SGE_TASK_ID'."\n";
         print IN "mv ".$config->getInputType()."_scheduler ".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/input/exporter.fas.$SGE_TASK_ID'."\n";
     } else {
         my $input = $params->{'data_files_dir'}."/".$config->getInputSequenceType()."/".$config->getInputType().'/tmp/exporter.fas.$SGE_TASK_ID';
@@ -421,15 +419,17 @@ sub _printArrayShell{
     {
         if($config->{'id'} eq 'priam'){
             print IN "tar -cf results.tar --directory=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/output/RESULTS/ ./paj_exporter.fas.priam.out.${SGE_TASK_ID}'."_seqsECs.txt\n";
-            _printGeStoreCall(*IN, {'filename'=>$params->{'script_id'}.'${SGE_TASK_ID}_'.$config->getID().'_out'.".tar",
+            _printGeStoreCall(*IN, {'filename'=>$config->getID().'_out'.".tar",
                                     'run'=>$params->{'script_id'},
+                                    'task'=>'${SGE_TASK_ID}',
                                     'path'=>"results.tar",
                                     'type'=>"l2r" } );
             #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}.'${SGE_TASK_ID}_'.$config->getID().'_out'.".tar -D run=".$params->{'script_id'}." -D path=results.tar -D type=l2r -conf=".GESTORE_CONFIG."\n";
         }else{
             print IN "tar -cf results.tar --directory=".NODE_LOCAL_PATH.'/gepan/${JOB_ID}'.'_'.'${SGE_TASK_ID}/output/ .'."\n";
-            _printGeStoreCall(*IN, {'filename'=>$params->{'script_id'}.'${SGE_TASK_ID}_'.$config->getID().'_out'.".tar",
+            _printGeStoreCall(*IN, {'filename'=>$config->getID().'_out'.".tar",
                                     'run'=>$params->{'script_id'},
+                                    'task'=>'${SGE_TASK_ID}',
                                     'path'=>"results.tar",
                                     'type'=>"l2r" } );
             #print IN "hadoop jar ".GESTORE_PATH." org.diffdb.move -D file=".$params->{'script_id'}.'${SGE_TASK_ID}_'.$config->getID().'_out'.".tar -D run=".$params->{'script_id'}." -D path=results.tar -D type=l2r -conf=".GESTORE_CONFIG."\n";
