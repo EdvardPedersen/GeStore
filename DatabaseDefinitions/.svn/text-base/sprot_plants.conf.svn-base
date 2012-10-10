@@ -1,0 +1,8 @@
+<database>
+    <name>sprot_plants</name>
+    <path>/uniprot/uniprot_sprot_plants.fas</path>
+    <sequence_type>protein</sequence_type>
+    <database_format>blast</database_format>
+    <database_taxon>plants</database_taxon>
+</database>
+

@@ -1,0 +1,14 @@
+<tool>
+    <type>prediction</type>
+    <sub_type></sub_type>
+    <id>null</id>
+    <input_type>nucleotide</input_type>
+    <input_format>fasta</input_format>
+    <input_sequence_type>read</input_sequence_type>
+    <output_type>nucleotide,protein</output_type>
+    <output_sequence_type>cds</output_sequence_type>
+    <output_format>fasta</output_format>
+    <parser>GePan::Parser::Prediction::Cds::Null2</parser>
+    <gs_input_format>fasta</gs_input_format>
+    <gs_output_format>fasta</gs_output_format>
+</tool>

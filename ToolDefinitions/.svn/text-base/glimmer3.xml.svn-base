@@ -1,0 +1,12 @@
+<tool>
+    <type>prediction</type>
+    <sub_type></sub_type>
+    <id>glimmer3</id>
+    <input_type>nucleotide</input_type>
+    <input_format>fasta</input_format>
+    <input_sequence_type>contig</input_sequence_type>
+    <output_type>nucleotide,protein</output_type>
+    <output_sequence_type>cds</output_sequence_type>
+    <output_format>fasta</output_format>
+    <parser>GePan::Parser::Prediction::Cds::Glimmer3</parser>
+</tool>

@@ -1,0 +1,13 @@
+<tool>
+    <type>annotation</type>
+    <sub_type>attribute</sub_type>
+    <id>krona</id>
+    <input_type>megan</input_type>
+    <input_sequence_type>abundance</input_sequence_type>
+    <input_format>table</input_format>
+    <output_type></output_type>
+    <output_sequence_type></output_sequence_type>
+    <output_format></output_format>
+    <parser>GePan::Parser::Prediction::Megan</parser>
+</tool>
+
