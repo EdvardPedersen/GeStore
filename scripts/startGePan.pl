@@ -350,7 +350,7 @@ sub _printArrayShell{
                                  'task'=>'${SGE_TASK_ID}'} );
         #print IN 'hadoop jar '.GESTORE_PATH.' org.diffdb.move -D file='.$params->{'script_id'}.$config->getInputType()."_scheduler.tar -D run=".$params->{'script_id'}." -D type=r2l -conf=".GESTORE_CONFIG."\n";
         #print IN "tar -xf ".$config->getInputType()."_scheduler --directory=".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/input/ ./exporter.fas.$SGE_TASK_ID'."\n";
-        print IN "mv ".$config->getInputType()."_scheduler ".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/input/ ./exporter.fas.$SGE_TASK_ID'."\n";
+        print IN "mv ".$config->getInputType()."_scheduler ".NODE_LOCAL_PATH."/gepan/".'${JOB_ID}'.'_'.'${SGE_TASK_ID}/input/exporter.fas.$SGE_TASK_ID'."\n";
     } else {
         my $input = $params->{'data_files_dir'}."/".$config->getInputSequenceType()."/".$config->getInputType().'/tmp/exporter.fas.$SGE_TASK_ID';
         print IN "\n# Copy input files to node\n";
