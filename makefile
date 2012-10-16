@@ -20,10 +20,10 @@ TREMBL_8_FILE = trembl_2011_08.dat
 REAL_RUN = `date +%s`
 
 all:    $(SOURCES)
-	rm -rf diffdb_classes/
-	mkdir diffdb_classes
-	javac -Xlint:unchecked -Xlint:deprecation -classpath $(CLASSPATH_JAVA) -d diffdb_classes $(SOURCES)
-	jar -cvf diffdb.jar -C diffdb_classes/ .
+	rm -rf move_classes/
+	mkdir move_classes
+	javac -Xlint:unchecked -Xlint:deprecation -classpath $(CLASSPATH_JAVA) -d move_classes $(SOURCES)
+	jar -cvf move.jar -C move_classes/ .
 
 update:
 	#scp -r 129.242.19.56:/home/epe005/GeStore/DiffDBMR/* .

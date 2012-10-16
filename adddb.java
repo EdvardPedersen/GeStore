@@ -245,6 +245,11 @@ public class adddb extends Configured implements Tool{
         fs.delete(tempFile, true);
         Put file_put = db_util.getPut(outputTable);
         file_put.add("d".getBytes(), "source".getBytes(), type.getBytes());
+        if(config.get("run_id").isEmpty()) {
+	  file_put.add("d".getBytes(), "database".getBytes(), new Long(timestamp), "y".getBytes());
+	} else {
+	  file_put.add("d".getBytes(), "database".getBytes(), new Long(timestamp), "n".getBytes());
+	}
         db_util.doPut("files", file_put);
         
         Put update_put = db_util.getPut(outputTable + config.get("run_id") + "_" + config.get("task_id"));
