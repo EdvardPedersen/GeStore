@@ -462,6 +462,8 @@ public class move extends Configured implements Tool{
       Get file_id_get = new Get(file_id.getBytes());
       Result file_result = db_util.doGet(db_name, file_id_get);
       KeyValue file_db = file_result.getColumnLatest("d".getBytes(), "database".getBytes());
+      if(file_db == null)
+	return false;
       String db = new String(file_db.getValue());
       if(db.equals("y")) {
 	return true;
