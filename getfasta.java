@@ -255,8 +255,8 @@ public class getfasta extends Configured implements Tool{
             endRow = Integer.toString(1 + new Integer(runId));
         }
         if(!taskId.isEmpty()) {
+	    endRow = startRow + "_" + Integer.toString(1 + new Integer(taskId));
             startRow = startRow + "_" + taskId;
-            endRow = startRow + "_" + Integer.toString(1 + new Integer(taskId));
         }
         
         System.out.println(outputFile);
