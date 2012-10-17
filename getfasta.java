@@ -283,6 +283,8 @@ public class getfasta extends Configured implements Tool{
         System.out.println("Taxon: " + taxon);
         System.out.println("Classname: " + className);
         System.out.println("Input table: " + inputTableS);
+        System.out.println("Start row: " + startRow);
+        System.out.println("End row: " + endRow);
         HBaseAdmin hbAdmin = new HBaseAdmin(config);
         if(!hbAdmin.tableExists(inputTableS)){
             System.out.println("NO TABLE!");
