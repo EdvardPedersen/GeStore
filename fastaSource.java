@@ -23,7 +23,7 @@ public class fastaSource implements sourceType{
                                 "-Dtype=FASTA",
                                 "-Dclassname=fasta",
                                 "-Drun_id=" + params.get("run_id"),
-                                "-Dtask_id" + params.get("task_id")
+                                "-Dtask_id=" + params.get("task_id")
         };
         fs.delete(new Path(temp_dir), true);
         getfasta.main(submission);
