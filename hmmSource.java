@@ -37,6 +37,14 @@ public class hmmSource implements sourceType{
         fs.delete(new Path(temp_dir), true);
 
         //Need to run HMMpress
+        
+        String line = "/opt/local/hmmer30rc2/binaries/hmmpress " + params.get("file_id");
+        System.out.println("Running command: " + line);
+        Runtime ourRuntime = Runtime.getRuntime();
+        File workingDir = new File(params.get("temp_path_base"));
+        Process formatdb = ourRuntime.exec(line, null, workingDir);
+        formatdb.waitFor();
+        
         FileStatus[] files = local_file_system.globStatus(new Path(real_temp_path + "*"));
         return files;
     }
