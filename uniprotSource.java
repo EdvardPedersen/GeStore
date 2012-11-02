@@ -40,7 +40,7 @@ public class uniprotSource implements sourceType{
         fs.delete(new Path(temp_dir), true);
         // Run formatdb
         // Needs to be moved to somewhere else!
-        String line = "formatdb -t " + params.get("file_id") + " -p T -i " + params.get("file_id");
+        String line = "/opt/bio/ncbi/bin/formatdb -t " + params.get("file_id") + " -p T -i " + params.get("file_id");
         System.out.println("Running command: " + line);
         Runtime ourRuntime = Runtime.getRuntime();
         File workingDir = new File(params.get("temp_path_base"));
