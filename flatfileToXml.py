@@ -81,8 +81,10 @@ def main(args):
     deleted = set()
     
     if(options.deleted):
-        for line in open(options.deleted):
-            deleted.add(line.strip())
+      #delFile = open(options.deleted)
+      if(os.path.isFile(options.deleted)):
+	for line in open(options.deleted):
+	  deleted.add(line.strip())
     
     last_entry = 0
     

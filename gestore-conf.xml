@@ -5,7 +5,7 @@
 	</property>
 	<property>
 		<name>hdfs_temp_path</name>
-		<value>/tmp/gestore/</value>
+		<value>/state/partition1/tmp/gestore/</value>
 	</property>
 	<property>
 		<name>hbase_file_table</name>
