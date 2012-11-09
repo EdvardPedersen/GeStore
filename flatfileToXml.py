@@ -4,6 +4,7 @@ import anydbm
 import argparse
 import math
 from collections import defaultdict
+import os
 import cProfile
 
 NUM_PROGRESS_REPORTS = 100
@@ -82,7 +83,7 @@ def main(args):
     
     if(options.deleted):
       #delFile = open(options.deleted)
-      if(os.path.isFile(options.deleted)):
+      if(os.path.isfile(options.deleted)):
 	for line in open(options.deleted):
 	  deleted.add(line.strip())
     

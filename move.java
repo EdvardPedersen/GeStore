@@ -184,6 +184,11 @@ public class move extends Configured implements Tool{
             System.exit(1);
         }
         
+        if(argConf.get("local_temp_path") == null) {
+            System.err.println("Missing local_temp_path, check gestore-conf.xml");
+            System.exit(1);
+        }
+        
         //Input paramaters
         curConf.put("run_id", argConf.get("run", ""));
         curConf.put("task_id", argConf.get("task", ""));
@@ -201,6 +206,7 @@ public class move extends Configured implements Tool{
         //Constants
         curConf.put("base_path", argConf.get("hdfs_base_path"));
         curConf.put("temp_path", argConf.get("hdfs_temp_path"));
+        curConf.put("local_temp_path", argConf.get("local_temp_path"));
         curConf.put("db_name_files", argConf.get("hbase_file_table"));
         curConf.put("db_name_runs", argConf.get("hbase_run_table"));
         curConf.put("db_name_updates", argConf.get("hbase_db_update_table"));
@@ -310,7 +316,7 @@ public class move extends Configured implements Tool{
         
         String final_result = getFullPath(config);
 
-        String temp_path_base = config.get("temp_path");
+        String temp_path_base = config.get("local_temp_path");
         Path newPath = new Path(final_result);
         Vector<Path> ret_path = new Vector<Path>();
         String lockName = lock(final_result.replaceAll("/", "_"));

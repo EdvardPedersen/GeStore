@@ -5,6 +5,10 @@
 	</property>
 	<property>
 		<name>hdfs_temp_path</name>
+		<value>/tmp/gestore/</value>
+	</property>
+	<property>
+		<name>local_temp_path</name>
 		<value>/state/partition1/tmp/gestore/</value>
 	</property>
 	<property>

@@ -12,7 +12,7 @@ public class hmmSource implements sourceType{
     public FileStatus[] process(Hashtable<String, String> params, FileSystem fs) throws Exception{
         FileSystem local_file_system = fs.getLocal(fs.getConf());
         local_file_system.mkdirs(new Path(params.get("temp_path_base")));
-        String temp_dir = params.get("temp_path_base") + params.get("file_id") + "_dir";
+        String temp_dir = params.get("temp_path") + params.get("file_id") + "_dir";
         String real_temp_path = params.get("temp_path_base") + params.get("file_id");
         String[] submission = { "-Dinput_table=" + params.get("file_id"),
                                 "-Doutput_file=" + temp_dir, 
