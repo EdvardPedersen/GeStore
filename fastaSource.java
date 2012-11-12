@@ -20,6 +20,7 @@ public class fastaSource implements sourceType{
                                 "-Dtimestamp_stop=" + params.get("timestamp_stop"),
                                 "-Dregex=" + params.get("delimiter"), 
                                 "-Daddendum=" + params.get("taxon"),
+                                "-Ddatabase=" + params.get("database"),
                                 "-Dtype=FASTA",
                                 "-Dclassname=fasta",
                                 "-Drun_id=" + params.get("run_id"),

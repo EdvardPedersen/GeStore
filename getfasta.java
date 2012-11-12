@@ -246,15 +246,16 @@ public class getfasta extends Configured implements Tool{
         
         String runId = argConf.get("run_id", "");
         String taskId = argConf.get("task_id", "");
+        String database = argConf.get("database", "n");
         
         String startRow = "";
         String endRow = "";
         
-        if(!runId.isEmpty()) {
+        if(!runId.isEmpty() && database.equals("n")) {
             startRow = runId;
             endRow = Integer.toString(1 + new Integer(runId));
         }
-        if(!taskId.isEmpty()) {
+        if(!taskId.isEmpty() && database.equals("n")) {
 	    endRow = startRow + "_" + Integer.toString(1 + new Integer(taskId));
             startRow = startRow + "_" + taskId;
         }
@@ -273,8 +274,10 @@ public class getfasta extends Configured implements Tool{
         config.set("mapred.job.map.memory.mb", "3072");
         config.set("mapred.job.reduce.memory.mb", "3072");
         
-        config.set("run_id", runId);
-        config.set("task_id", taskId);
+        if(database.equals("n")) {
+	  config.set("run_id", runId);
+	  config.set("task_id", taskId);
+	}
         
         dbutil db_util = new dbutil(config);
         Job job = new Job(config, "getfasta_" + className + "_" + inputTableS);

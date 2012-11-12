@@ -86,7 +86,7 @@ public class move extends Configured implements Tool{
         
         //Get source type
         confArg.put("source", getSource(db_util, confArg.get("db_name_files"), confArg.get("file_id")));
-        confArg.put("datbase", isDatabase(db_util, confArg.get("db_name_files"), confArg.get("file_id")).toString());
+        confArg.put("database", isDatabase(db_util, confArg.get("db_name_files"), confArg.get("file_id")));
         if(!confArg.get("source").equals("local") && type_move==toFrom.REMOTE2LOCAL && !confArg.get("timestamp_stop").equals(Integer.toString(Integer.MAX_VALUE))) {
             confArg.put("timestamp_stop", Long.toString(latestVersion(confArg, db_util)));
         }
@@ -464,17 +464,17 @@ public class move extends Configured implements Tool{
         return new String(file_source.getValue());
     }
     
-    private static Boolean isDatabase(dbutil db_util, String db_name, String file_id) throws Exception {
+    private static String isDatabase(dbutil db_util, String db_name, String file_id) throws Exception {
       Get file_id_get = new Get(file_id.getBytes());
       Result file_result = db_util.doGet(db_name, file_id_get);
       KeyValue file_db = file_result.getColumnLatest("d".getBytes(), "database".getBytes());
       if(file_db == null)
-	return false;
+	return "n";
       String db = new String(file_db.getValue());
       if(db.equals("y")) {
-	return true;
+	return "y";
       } else {
-	return false;
+	return "n";
       }
     }
     
@@ -489,8 +489,7 @@ public class move extends Configured implements Tool{
     private static String getFileName(Hashtable<String, String> config) {
         String retString =      config.get("file_id") + "_" + config.get("timestamp_start") + "_" + config.get("timestamp_stop") + "_" +
                                 config.get("delimiter").hashCode() + "_" + config.get("taxon");
-        Boolean db = new Boolean(config.get("database"));
-        if(db) {
+        if(config.get("database").equals("y")) {
             return retString;
         } else {
 	    if(config.get("task_id").isEmpty()) {
