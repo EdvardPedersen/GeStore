@@ -53,7 +53,7 @@ public class hmmeroutputEntry extends genericEntry{
     
     // Parses the string to add to a certain field
     public boolean addEntry(String entry) {
-        String [] fields = entry.split("\t");
+        String [] fields = entry.split(" +");
         if(fields.length < 5)
             return false;
         

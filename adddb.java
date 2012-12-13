@@ -62,7 +62,9 @@ public class adddb extends Configured implements Tool{
             } catch(Exception E) {
                 return;
             }
-            newEntry.addEntries(resultStrings);
+            if(!newEntry.addEntries(resultStrings))
+	      return;
+	    
             Get newResultGet = new Get(newEntry.getRowID());
             Get oldResultGet = new Get(newEntry.getRowID());
             newResultGet.setTimeRange(timestamp+1, Long.MAX_VALUE);

@@ -146,11 +146,11 @@ public class move extends Configured implements Tool{
         
         if(type_move == toFrom.LOCAL2REMOTE) {
             putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg), confArg.get("source"));
-            putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"), confArg.get("timestamp_stop"));
+            putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"), confArg.get("timestamp_stop"), getFullPath(confArg), confArg.get("delimiter"));
             hdfs.copyFromLocalFile(new Path(confArg.get("local_path")), new Path(getFullPath(confArg)));
         } else if(type_move == toFrom.REMOTE2LOCAL) {
             FileStatus[] files = hdfs.globStatus(new Path(getFullPath(confArg) + "*"));
-            putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"), confArg.get("timestamp_stop"));
+            putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"), confArg.get("timestamp_stop"), getFullPath(confArg), confArg.get("delimiter"));
             for(FileStatus file : files) {
                 Path cur_file = file.getPath();
                 Path cur_local_path = new Path(new String(confArg.get("local_path") + confArg.get("file_id")));
@@ -478,10 +478,12 @@ public class move extends Configured implements Tool{
       }
     }
     
-    private static boolean putRunEntry(dbutil db_util, String db_name, String run_id, String file_id, String type, String timestamp, String timestamp_stop) throws Exception {
+    private static boolean putRunEntry(dbutil db_util, String db_name, String run_id, String file_id, String type, String timestamp, String timestamp_stop, String path, String regex) throws Exception {
         Put run_id_put = new Put(run_id.getBytes());
         run_id_put.add("d".getBytes(), file_id.getBytes(), new Long(timestamp), type.getBytes());
         run_id_put.add("d".getBytes(), (file_id + "_db_timestamp").getBytes(), new Long(timestamp), timestamp_stop.getBytes());
+        run_id_put.add("d".getBytes(), (file_id + "_filename").getBytes(), new Long(timestamp), path.getBytes());
+        run_id_put.add("d".getBytes(), (file_id + "_regex").getBytes(), new Long(timestamp), regex.getBytes());
         db_util.doPut(db_name, run_id_put);
         return true;
     }
