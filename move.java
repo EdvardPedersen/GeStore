@@ -243,7 +243,7 @@ public class move extends Configured implements Tool{
                 children = zkInstance.getChildren(parent, false);
                 for(String curChild : children) {
                     String child = parent + "/" + curChild;
-                    System.out.println(child + " " + realPath + " " + Integer.toString(child.compareTo(realPath)));
+                    //System.out.println(child + " " + realPath + " " + Integer.toString(child.compareTo(realPath)));
                     if(child.compareTo(realPath) < 0) {
                         Thread.sleep(300);
                         continue checkLock;
@@ -317,10 +317,10 @@ public class move extends Configured implements Tool{
         String final_result = getFullPath(config);
 
         String temp_path_base = config.get("local_temp_path");
-        Path newPath = new Path(final_result);
+        Path newPath = new Path(final_result + "*");
         Vector<Path> ret_path = new Vector<Path>();
         String lockName = lock(final_result.replaceAll("/", "_"));
-        if(fs.exists(newPath)) {
+        if(fs.globStatus(newPath).length != 0) {
             ret_path.add(newPath);
             unlock(lockName);
             config.put("full_file_name", final_result);
@@ -468,8 +468,9 @@ public class move extends Configured implements Tool{
       Get file_id_get = new Get(file_id.getBytes());
       Result file_result = db_util.doGet(db_name, file_id_get);
       KeyValue file_db = file_result.getColumnLatest("d".getBytes(), "database".getBytes());
-      if(file_db == null)
+      if(file_db == null){
 	return "n";
+	}
       String db = new String(file_db.getValue());
       if(db.equals("y")) {
 	return "y";
