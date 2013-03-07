@@ -5,7 +5,12 @@ INPUT_SOURCE = LongRecordReader.java DatInputFormat.java
 EXPERIMENT_SOURCES = countupdates.java cleandb.java inspectpipeline.java
 DEPRECATED_SOURCE = cmpdb.java countupdates.java getdat.java getdeleted.java annotateBlastRes.java blastoutputformat.java combineBlastOutput.java
 SOURCES = $(ENTRY_SOURCES) $(SOURCE_SOURCES) $(APPLICATION_SOURCE) $(INPUT_SOURCE) $(EXPERIMENT_SOURCES)
-CLASSPATH_JAVA = /usr/lib/hadoop-0.20/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.
+
+# ICE 2
+CLASSPATH_JAVA = /state/partition1/local/hadoop-1.0.4/hadoop-core-1.0.4.jar:/state/partition1/local/hbase-0.94.5/hbase-0.94.5.jar:/state/partition1/local/zookeeper-3.4.5/zookeeper-3.4.5.jar
+
+# ICE 1
+#CLASSPATH_JAVA = /usr/lib/hadoop-0.20/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.
 #CLASSPATH_JAVA = /usr/lib/hadoop-0.20-mapreduce/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.
 #CLASSPATH_JAVA = /usr/lib/hadoop/hadoop-common-2.0.0-cdh4.0.1.jar:/usr/lib/hadoop-0.20-mapreduce/hadoop-2.0.0-mr1-cdh4.0.1-core.jar:/usr/lib/hbase/hbase.jar:/usr/lib/hadoop-hdfs/hadoop-hdfs-2.0.0-cdh4.0.1.jar:/home/epe005/GeStore/diffdb_classes/:/usr/lib/zookeeper/zookeeper-3.4.3-cdh4.0.1.jar:.
 #CLASSPATH_JAVA = /usr/lib/hadoop/client-0.20/*:/usr/lib/hbase/hbase.jar:/home/epe005/GeStore/diffdb_classes/:/usr/lib/zookeeper/zookeeper-3.4.3-cdh4.0.1.jar:.
