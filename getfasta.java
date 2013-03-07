@@ -46,7 +46,7 @@ public class getfasta extends Configured implements Tool{
         
         public void setup(Context context) throws IOException{
             try {
-                inputTable = new HTable(context.getConfiguration().get(TableInputFormat.INPUT_TABLE));
+                inputTable = new HTable(context.getConfiguration(), context.getConfiguration().get(TableInputFormat.INPUT_TABLE));
                 timestamp = new Long(context.getConfiguration().get("timestamp"));
                 lowTimestamp = new Long(context.getConfiguration().get("low_timestamp"));
                 timestamp += 1;
@@ -192,7 +192,7 @@ public class getfasta extends Configured implements Tool{
             String metadata = "# Metadata for getfasta\n";
             
             // Get the number of entries for the current database version
-            HTable updates = new HTable(table_name);
+            HTable updates = new HTable(context.getConfiguration(), table_name);
             Get full_entries_get = new Get(row_name.getBytes());
             full_entries_get.setTimeRange(timestamp_start, timestamp_stop);
             full_entries_get.addColumn(family.getBytes(), column_name.getBytes());
