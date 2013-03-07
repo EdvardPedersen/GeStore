@@ -5,19 +5,15 @@ INPUT_SOURCE = LongRecordReader.java DatInputFormat.java
 EXPERIMENT_SOURCES = countupdates.java cleandb.java inspectpipeline.java
 DEPRECATED_SOURCE = cmpdb.java countupdates.java getdat.java getdeleted.java annotateBlastRes.java blastoutputformat.java combineBlastOutput.java
 SOURCES = $(ENTRY_SOURCES) $(SOURCE_SOURCES) $(APPLICATION_SOURCE) $(INPUT_SOURCE) $(EXPERIMENT_SOURCES)
-<<<<<<< HEAD
-
 # ICE 2
 CLASSPATH_JAVA = /state/partition1/local/hadoop-1.0.4/hadoop-core-1.0.4.jar:/state/partition1/local/hbase-0.94.5/hbase-0.94.5.jar:/state/partition1/local/zookeeper-3.4.5/zookeeper-3.4.5.jar
 
 # ICE 1
-=======
->>>>>>> 8e159f5a8a7496f9fa17988d33087c025259c4d5
 #CLASSPATH_JAVA = /usr/lib/hadoop-0.20/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.
 #CLASSPATH_JAVA = /usr/lib/hadoop-0.20-mapreduce/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.
 #CLASSPATH_JAVA = /usr/lib/hadoop/hadoop-common-2.0.0-cdh4.0.1.jar:/usr/lib/hadoop-0.20-mapreduce/hadoop-2.0.0-mr1-cdh4.0.1-core.jar:/usr/lib/hbase/hbase.jar:/usr/lib/hadoop-hdfs/hadoop-hdfs-2.0.0-cdh4.0.1.jar:/home/epe005/GeStore/diffdb_classes/:/usr/lib/zookeeper/zookeeper-3.4.3-cdh4.0.1.jar:.
 #CLASSPATH_JAVA = /usr/lib/hadoop/client-0.20/*:/usr/lib/hbase/hbase.jar:/home/epe005/GeStore/diffdb_classes/:/usr/lib/zookeeper/zookeeper-3.4.3-cdh4.0.1.jar:.
-CLASSPATH_JAVA = /etc/hadoop/conf:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-0.20-mapreduce/./:/usr/lib/hadoop-0.20-mapreduce/lib/*:/usr/lib/hadoop-0.20-mapreduce/.//*
+#CLASSPATH_JAVA = /etc/hadoop/conf:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-0.20-mapreduce/./:/usr/lib/hadoop-0.20-mapreduce/lib/*:/usr/lib/hadoop-0.20-mapreduce/.//*
 JAR_PATH = /home/epe005/gestore/
 INPUT_DIR = /home/epe005/test_databases/
 OUTPUT_DIR = /user/epe005/output/
