@@ -51,6 +51,7 @@ public class move extends Configured implements Tool{
         Configuration config = HBaseConfiguration.create();
         zkWatcher = new ZooKeeperWatcher(config, "Testing", new HBaseAdmin(config));
         zkInstance = new ZooKeeper(ZKConfig.getZKQuorumServersString(config), config.getInt("zookeeper.session.timeout", -1), zkWatcher);
+
         
         //Get type of movement
         toFrom type_move = checkArgs(confArg);
@@ -158,6 +159,7 @@ public class move extends Configured implements Tool{
                 if(suffix.length() > 0) {
                     cur_local_path = cur_local_path.suffix(new String("." + suffix));
                 }
+		System.out.println("Local path:" + cur_local_path + "\n");
                 hdfs.copyToLocalFile(cur_file, cur_local_path);
             }
         }
@@ -496,9 +498,9 @@ public class move extends Configured implements Tool{
             return retString;
         } else {
 	    if(config.get("task_id").isEmpty()) {
-	      return retString + "_" + config.get("run_id");
+	      return retString + "_" + config.get("run_id") + "_";
 	    } else {
-	      return retString + "_" + config.get("run_id") + "_" + config.get("task_id");
+	      return retString + "_" + config.get("run_id") + "_" + config.get("task_id") + "_";
 	    }
         }
     }

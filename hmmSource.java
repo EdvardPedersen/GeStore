@@ -38,7 +38,8 @@ public class hmmSource implements sourceType{
 
         //Need to run HMMpress
         
-        String line = "/opt/local/hmmer30rc2/binaries/hmmpress " + params.get("file_id");
+        //String line = "/opt/local/hmmer30rc2/binaries/hmmpress " + params.get("file_id");
+	String line = "/opt/bio/hmmer/bin/hmmpress " + params.get("file_id");
         System.out.println("Running command: " + line);
         Runtime ourRuntime = Runtime.getRuntime();
         File workingDir = new File(params.get("temp_path_base"));
