@@ -318,7 +318,7 @@ public class move extends Configured implements Tool{
         
         String final_result = getFullPath(config);
 
-        String temp_path_base = config.get("local_temp_path");
+        String temp_path_base = config.get("local_temp_path") + "_" + config.get("task_id") + "_" + config.get("run_id");
         Path newPath = new Path(final_result + "*");
         Vector<Path> ret_path = new Vector<Path>();
         String lockName = lock(final_result.replaceAll("/", "_"));

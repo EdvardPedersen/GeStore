@@ -280,6 +280,7 @@ public class getfasta extends Configured implements Tool{
 	}
         
         dbutil db_util = new dbutil(config);
+	config.setBoolean("mapred.task.profile", true);
         Job job = new Job(config, "getfasta_" + className + "_" + inputTableS);
         MultipleOutputs.setCountersEnabled(job, true);
         System.out.println("Type: " + type);
