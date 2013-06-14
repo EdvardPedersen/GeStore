@@ -46,13 +46,24 @@ public class move extends Configured implements Tool{
         Date currentTime = new Date();
         Date endDate = new Date(new Long(confArg.get("timestamp_stop")));
         Boolean full_run = confArg.get("intermediate").matches("(?i).*true.*");
+        Boolean quick_add = confArg.get("quick_add").matches("(?i).*true.*");
         
         //ZooKeeper setup
         Configuration config = HBaseConfiguration.create();
         zkWatcher = new ZooKeeperWatcher(config, "Testing", new HBaseAdmin(config));
         zkInstance = new ZooKeeper(ZKConfig.getZKQuorumServersString(config), config.getInt("zookeeper.session.timeout", -1), zkWatcher);
 
-        
+       
+        if(!confArg.get("task_id").isEmpty()) {
+            confArg.put("temp_path", confArg.get("temp_path") + confArg.get("task_id"));
+        }
+
+        String lockRequest = confArg.get("file_id");
+        if(!confArg.get("run_id").isEmpty())
+            lockRequest = lockRequest + "_" + confArg.get("run_id") + "_";
+        if(!confArg.get("task_id").isEmpty())
+            lockRequest = lockRequest + "_" + confArg.get("task_id") + "_";
+ 
         //Get type of movement
         toFrom type_move = checkArgs(confArg);
         if(type_move == toFrom.LOCAL2REMOTE && !confArg.get("format").equals("unknown")) {
@@ -65,10 +76,12 @@ public class move extends Configured implements Tool{
             arguments.add("-Dtemp_hdfs_path=" + confArg.get("temp_path"));
             arguments.add("-Drun_id=" + confArg.get("run_id"));
             if(!confArg.get("run_id").isEmpty())
-                arguments.add("-Drun_id=" +confArg.get("run_id"));
+                arguments.add("-Drun_id=" + confArg.get("run_id"));
             if(!confArg.get("task_id").isEmpty())
                 arguments.add("-Dtask_id=" + confArg.get("task_id"));
-            String lockName = lock(confArg.get("file_id"));
+            if(quick_add)
+                arguments.add("-Dquick_add=" + confArg.get("quick_add"));
+            String lockName = lock(lockRequest);
             String [] argumentString = arguments.toArray(new String [arguments.size()]);
             adddb.main(argumentString);
             unlock(lockName);
@@ -100,21 +113,34 @@ public class move extends Configured implements Tool{
         KeyValue run_file_prev = run_get.getColumnLatest("d".getBytes(), (confArg.get("file_id") + "_db_timestamp").getBytes());
         String last_timestamp = new String("0");
         if(null != run_file_prev && !confArg.get("source").equals("local")) {
-            last_timestamp = new String(run_file_prev.getValue());
-            Integer lastTimestamp = new Integer(last_timestamp);
-            lastTimestamp += 1;
-            last_timestamp = lastTimestamp.toString();
-            System.out.println("Last timestamp: " + last_timestamp + "End date:" + endDate);
-            Date last_run = new Date(run_file_prev.getTimestamp());
-            if(last_run.before(endDate) && !full_run) {
-                confArg.put("timestamp_start", last_timestamp);
+            long last_timestamp_real = run_file_prev.getTimestamp();
+            Long current_timestamp = new Long(confArg.get("timestamp_real"));
+            if((current_timestamp - last_timestamp_real) > 36000) {
+                last_timestamp = new String(run_file_prev.getValue());
+                Integer lastTimestamp = new Integer(last_timestamp);
+                lastTimestamp += 1;
+                last_timestamp = lastTimestamp.toString();
+                System.out.println("Last timestamp: " + last_timestamp + "End date:" + endDate);
+                Date last_run = new Date(run_file_prev.getTimestamp());
+                if(last_run.before(endDate) && !full_run) {
+                    confArg.put("timestamp_start", last_timestamp);
+                }
             }
+        }
+
+        Integer tse = new Integer(confArg.get("timestamp_stop"));
+        Integer tss = new Integer(confArg.get("timestamp_start"));
+        if(tss > tse) {
+            System.out.println("No new version");
+            return 0;
         }
         
         /*
          * Generate file
          */
         
+        String lockName = lock(lockRequest);
+
         Get file_id_get = new Get(confArg.get("file_id").getBytes());
         Result file_get = db_util.doGet(confArg.get("db_name_files"), file_id_get);
         if(!file_get.isEmpty()) {
@@ -124,11 +150,15 @@ public class move extends Configured implements Tool{
             if (!found && type_move == toFrom.REMOTE2LOCAL){
                     if(!confArg.get("source").equals("local")) {
                         // Generate intermediate file
-                        getFile(hdfs, confArg, db_util);
+                        if(getFile(hdfs, confArg, db_util) == null) {
+                            unlock(lockName);
+                            return 1;
+                        }
                         // Put generated file into file database
                         putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), confArg.get("full_file_name"), confArg.get("source"));
                     } else {
                         System.err.println("ERROR: Remote file not found, and cannot be generated!");
+                        unlock(lockName);
                         return 1;
                     }
             }
@@ -136,10 +166,11 @@ public class move extends Configured implements Tool{
             if(type_move == toFrom.REMOTE2LOCAL) {
                 System.err.println("ERROR: Remote file not found, and cannot be generated!");
                 System.err.println("config: " + confArg.toString() );
+                unlock(lockName);
                 return 1;
             }
         }
-        
+             
         /*
          * Copy file
          * Update tables
@@ -152,6 +183,7 @@ public class move extends Configured implements Tool{
         } else if(type_move == toFrom.REMOTE2LOCAL) {
             FileStatus[] files = hdfs.globStatus(new Path(getFullPath(confArg) + "*"));
             putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"), confArg.get("timestamp_stop"), getFullPath(confArg), confArg.get("delimiter"));
+            unlock(lockName);
             for(FileStatus file : files) {
                 Path cur_file = file.getPath();
                 Path cur_local_path = new Path(new String(confArg.get("local_path") + confArg.get("file_id")));
@@ -163,6 +195,7 @@ public class move extends Configured implements Tool{
                 hdfs.copyToLocalFile(cur_file, cur_local_path);
             }
         }
+        unlock(lockName);
         return 0;
     }
 
@@ -202,8 +235,10 @@ public class move extends Configured implements Tool{
         curConf.put("delimiter", argConf.get("regex", "ID=.*"));
         curConf.put("taxon", argConf.get("taxon", "all"));
         curConf.put("intermediate", argConf.get("full_run", "false"));
+        curConf.put("quick_add", argConf.get("quick_add", "false"));
         Boolean full_run = curConf.get("intermediate").matches("(?i).*true.*");
         curConf.put("format", argConf.get("format", "unknown"));
+        
         
         //Constants
         curConf.put("base_path", argConf.get("hdfs_base_path"));
@@ -225,6 +260,8 @@ public class move extends Configured implements Tool{
         String realPath = "";
         String parent = "/lock";
         String lockName = parent + "/" + lock;
+
+        System.out.println("Getting lock " + lockName);
         
         try{
             if(zkInstance.exists(parent, false) == null)
@@ -246,11 +283,13 @@ public class move extends Configured implements Tool{
                 for(String curChild : children) {
                     String child = parent + "/" + curChild;
                     //System.out.println(child + " " + realPath + " " + Integer.toString(child.compareTo(realPath)));
-                    if(child.compareTo(realPath) < 0) {
+                    if(child.compareTo(realPath) < 0 && child.length() == realPath.length() && curChild.startsWith(lock)) {
+                        //System.out.println(child + " cmp to " + realPath);
                         Thread.sleep(300);
                         continue checkLock;
                     }
                 }
+                System.out.println("Got lock " + lockName);
                 return realPath;
             }
         } catch(Exception E) {
@@ -262,12 +301,13 @@ public class move extends Configured implements Tool{
     }
     
     private static boolean unlock(String lock) {
+        System.out.println("Releasing lock " + lock);
         try {
             zkInstance.delete(lock, -1);
         } catch(Exception E) {
-            System.out.println("Error releasing lock: " + E.toString());
-            E.printStackTrace();
-            return false;
+            //System.out.println("Error releasing lock: " + E.toString());
+            //E.printStackTrace();
+            return true;
         }
         return true;
     }
@@ -310,15 +350,21 @@ public class move extends Configured implements Tool{
     private static Vector<Path> getFile(FileSystem fs, Hashtable<String, String> config, dbutil db_util) throws Exception {
         Long latestVersion = latestVersion(config, db_util);
                 
-        config.put("timestamp_start", config.get("timestamp_start"));
-        config.put("timestamp_real", latestVersion.toString());
-        config.put("timestamp_stop", latestVersion.toString());
+        try {
+            config.put("timestamp_start", config.get("timestamp_start"));
+            config.put("timestamp_real", latestVersion.toString());
+            config.put("timestamp_stop", latestVersion.toString());
+        } catch (Exception E) {
+            System.out.println("Trying to get file that is impossible to generate for file " + getFullPath(config));
+            E.printStackTrace();
+            return null;
+        }
                
         System.out.println("Getting DB for timestamp: " + config.get("timestamp_start") + " to " + config.get("timestamp_stop"));
         
         String final_result = getFullPath(config);
 
-        String temp_path_base = config.get("local_temp_path") + "_" + config.get("task_id") + "_" + config.get("run_id");
+        String temp_path_base = config.get("local_temp_path") + "_" + config.get("task_id") + "_" + config.get("run_id") + "/";
         Path newPath = new Path(final_result + "*");
         Vector<Path> ret_path = new Vector<Path>();
         String lockName = lock(final_result.replaceAll("/", "_"));
@@ -329,7 +375,7 @@ public class move extends Configured implements Tool{
             return ret_path;
         } else {
             if(!config.get("source").equals("local")) {
-                config.put("temp_path_base", temp_path_base);
+                config.put("temp_path_base", temp_path_base );
                 
                 config.put("timestamp_start", config.get("timestamp_start"));
                 config.put("timestamp_real", latestVersion.toString());
@@ -357,6 +403,7 @@ public class move extends Configured implements Tool{
                     cur_local_path = cur_local_path.suffix(suffix);
                     Path res_path = new Path(new String(final_result + suffix));
                     System.out.println("Moving file " + cur_file.toString() + " to " + res_path.toString());
+                    System.out.println("Final result: " + final_result + " Suffix: " + suffix);
                     fs.moveFromLocalFile(cur_file, res_path);
                 }
 
@@ -371,7 +418,11 @@ public class move extends Configured implements Tool{
         if(!config.get("timestamp_stop").equals(Integer.toString(Integer.MAX_VALUE))) {
             return new Long(config.get("timestamp_stop"));
         }
-        String rowName = config.get("file_id") + config.get("run_id") + "_" + config.get("task_id");
+
+        String rowName = config.get("file_id") + config.get("run_id") + "_";
+        if(config.get("task_id") != "") {
+            rowName = rowName + String.format("%04d", new Integer(config.get("task_id")));
+        }
         System.out.println(rowName);
         Get timestampGet = new Get(rowName.getBytes());
         timestampGet.addColumn("d".getBytes(), "update".getBytes());
@@ -384,6 +435,10 @@ public class move extends Configured implements Tool{
 	  timestampGet.addColumn("d".getBytes(), "update".getBytes());
 	  timestampResult = db_util.doGet(config.get("db_name_updates"), timestampGet);
 	  tsKv = timestampResult.getColumnLatest("d".getBytes(), "update".getBytes());
+        }
+
+        if(tsKv == null) {
+          return null;
         }
         Long latestVersion = new Long(tsKv.getTimestamp());
         return latestVersion;

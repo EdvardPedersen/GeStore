@@ -121,7 +121,7 @@ public class uniprotEntry extends genericEntry{
                 return getFasta(options);
             }
         } else if (type.equals("DAT")) {
-            String[] retString = {getDat().toString()};
+            String[] retString = {"ID        " + getTableEntry("ID").trim(),getDat().toString() + "//"};
             return retString;
         }
         String[] retString = {"NULL"};
@@ -172,5 +172,6 @@ public class uniprotEntry extends genericEntry{
             }
         }
         return outText;
+	
     }
 }

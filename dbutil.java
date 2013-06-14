@@ -109,4 +109,14 @@ public class dbutil{
     public Put getPut(String row) {
         return new Put(row.getBytes());
     }
+    public void close() {
+        for(Enumeration dbs = databases.keys(); dbs.hasMoreElements();) {
+            String tempTable = (String)dbs.nextElement();
+            try {
+                databases.get(tempTable).close();
+            } catch (Exception E) {
+                System.out.println("Exception:" + E.toString());
+            }
+        }
+    }
 }

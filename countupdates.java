@@ -119,6 +119,9 @@ public class countupdates{
         //config.set(TableInputFormat.SCAN_TIMERANGE_START, timestampStart);
         config.set(TableInputFormat.SCAN_TIMERANGE_END, timestampStop);
         config.set("timestamp", timestampStop);
+        config.set("mapred.task.maxpmem", "8589934592");
+        config.set("mapred.job.map.memory.mb", "3072");
+        config.set("mapred.job.reduce.memory.mb", "3072");
         
         
         Job job = new Job(config, "countupdates");
@@ -145,7 +148,7 @@ public class countupdates{
         TextOutputFormat.setOutputPath(job, new Path(outputFile));
         job.setOutputFormatClass(TextOutputFormat.class); 
         
-        job.submit(); 
+        job.waitForCompletion(true); 
         System.out.println(job.getTrackingURL());
     }
 }

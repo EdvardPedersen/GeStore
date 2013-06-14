@@ -199,7 +199,12 @@ public class getfasta extends Configured implements Tool{
             Result entries_res = updates.get(full_entries_get);
             System.out.println("Table: " + table_name + " row:" +  row_name + " column: " + column_name);
             KeyValue run_file_prev = entries_res.getColumnLatest(family.getBytes(), column_name.getBytes());
-            String lastEntries = new String(run_file_prev.getValue());
+            String lastEntries = "";
+            try {
+                lastEntries = new String(run_file_prev.getValue());
+            } catch (NullPointerException E) {
+                lastEntries = "NULL";
+            }
             
             metadata = metadata + "TABLE_NAME\t" + table_name + "\n";
             metadata = metadata + "INC_ENTRIES\t" + entries + "\n";
@@ -256,8 +261,8 @@ public class getfasta extends Configured implements Tool{
             endRow = Integer.toString(1 + new Integer(runId));
         }
         if(!taskId.isEmpty() && database.equals("n")) {
-	    endRow = startRow + "_" + Integer.toString(1 + new Integer(taskId));
-            startRow = startRow + "_" + taskId;
+	    endRow = startRow + "_" + String.format("%04d", 1 + new Integer(taskId));
+            startRow = startRow + "_" + String.format("%04d", new Integer(taskId));
         }
         
         System.out.println(outputFile);
@@ -280,7 +285,7 @@ public class getfasta extends Configured implements Tool{
 	}
         
         dbutil db_util = new dbutil(config);
-	config.setBoolean("mapred.task.profile", true);
+	//config.setBoolean("mapred.task.profile", true);
         Job job = new Job(config, "getfasta_" + className + "_" + inputTableS);
         MultipleOutputs.setCountersEnabled(job, true);
         System.out.println("Type: " + type);
@@ -289,6 +294,8 @@ public class getfasta extends Configured implements Tool{
         System.out.println("Input table: " + inputTableS);
         System.out.println("Start row: " + startRow);
         System.out.println("End row: " + endRow);
+        System.out.println("Timestamp start: " + timestampStart);
+        System.out.println("Timestamp stop: " + timestampStop);
         HBaseAdmin hbAdmin = new HBaseAdmin(config);
         if(!hbAdmin.tableExists(inputTableS)){
             System.out.println("NO TABLE!");

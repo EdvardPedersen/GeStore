@@ -133,6 +133,9 @@ public class adddb extends Configured implements Tool{
                 System.out.println(newPut.toString());
                 System.out.println(e.toString());
             }
+        }
+        public void cleanup(Context context) throws IOException, InterruptedException{
+            outputTable.close();
         } 
     }
     
@@ -154,10 +157,12 @@ public class adddb extends Configured implements Tool{
         String timestamp  = argConf.get("timestamp");
         String type = argConf.get("type");
         String targetDir = argConf.get("target_dir", "") + timestamp;
+        Boolean quick_add = argConf.get("quick_add", "false").matches("(?i).*true.*");
         
+                
         String tempHDFSPath = argConf.get("temp_hdfs_path", "/tmp/gestore/");
        
-        String baseFile = "adddbFile";
+        String baseFile = outputTable + "adddbFile";
         String dirFile = "adddbDirlist";
         
         //JobConf conf = new JobConf(diffdb.class); 
@@ -166,7 +171,11 @@ public class adddb extends Configured implements Tool{
         dbutil db_util = new dbutil(config);
         
         config.set("run_id", argConf.get("run_id", ""));
-        config.set("task_id", argConf.get("task_id", ""));
+        try{
+            config.set("task_id", String.format( "%04d", new Integer(argConf.get("task_id", ""))));
+        } catch (NumberFormatException E) {
+            config.set("task_id", "");
+        }
         
         System.out.println("Run_id " + config.get("run_id"));
         
@@ -193,6 +202,7 @@ public class adddb extends Configured implements Tool{
         config.set("mapred.job.map.memory.mb", "3072");
         config.set("mapred.job.reduce.memory.mb", "3072");
         config.setBoolean("mapreduce.job.maps.speculative.execution", false);
+	//config.setBoolean("mapred.task.profile", true);
         
         Job job = new Job(config, "addDb_" + type + "_" + outputTable);
         db_util.register_database(outputTable, true);
@@ -218,7 +228,16 @@ public class adddb extends Configured implements Tool{
             newFile.close();
             DatInputFormat.addInputPath(job, new Path(tempHDFSPath + dirFile));
         } else {
-            fs.copyFromLocalFile(new Path(inputDir), tempFile);
+            try{
+                fs.copyFromLocalFile(new Path(inputDir), tempFile);
+            } catch (Exception E) {
+                System.out.println("Unable to copy file from " + inputDir + " to " + tempFile.toString());
+            }
+            if(fs.isFile(tempFile)) {
+                System.out.println("File copied successfully!\n");
+            } else {
+                System.out.println("File not copied successfully!\n");
+            }
             DatInputFormat.addInputPath(job, tempFile);
         }
         //DatInputFormat.setMinInputSplitSize(job, 10000000);
@@ -234,15 +253,21 @@ public class adddb extends Configured implements Tool{
         
         HTable numReduceTableTesters = new HTable(config, db_util.getRealName(outputTable));
         int regions = numReduceTableTesters.getRegionsInfo().size();
+        numReduceTableTesters.close();
         job.setNumReduceTasks(regions);
         job.setNumReduceTasks(0);
         
         System.out.println("Table: " + outputTable + "\n");
         
         try {
-            job.waitForCompletion(true);
+            if(quick_add) {
+              job.submit();
+            } else {
+              job.waitForCompletion(true);
+            }
         } catch (Exception E) {
-            System.out.println("ERROR with the STUFFZ!!");
+            System.out.println("Error running job: " + E.toString());
+            E.printStackTrace();
         }
         fs.delete(tempFile, true);
         Put file_put = db_util.getPut(outputTable);
@@ -261,6 +286,7 @@ public class adddb extends Configured implements Tool{
         Counters allCounter = job.getCounters();
         update_put.add("d".getBytes(), "entries".getBytes(), new Long(timestamp), Long.toString(allCounter.findCounter(ENTRY_COUNTER.EXISTING).getValue()).getBytes());
         db_util.doPut("db_updates", update_put);
+        db_util.close();
         // Move to base_path
         // Add to gepan_files
         return 0;
