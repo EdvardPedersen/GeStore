@@ -1,12 +1,20 @@
-ENTRY_SOURCES = uniprotEntry.java genericEntry.java fastaEntry.java glimmerpredictEntry.java pfamEntry.java hmmEntry.java priamEntry.java blastoutputEntry.java hmmeroutputEntry.java
-SOURCE_SOURCES = sourceType.java uniprotSource.java sprot.java trembl.java fastaSource.java glimmerpredictSource.java pfamSource.java hmmSource.java priamSource.java blastoutputSource.java hmmeroutputSource.java
+ENTRY_SOURCES = uniprotEntry.java genericEntry.java fastaEntry.java glimmerpredictEntry.java pfamEntry.java hmmEntry.java priamEntry.java blastoutputEntry.java hmmeroutputEntry.java fullfileEntry.java
+SOURCE_SOURCES = sourceType.java uniprotSource.java sprot.java trembl.java fastaSource.java glimmerpredictSource.java pfamSource.java hmmSource.java priamSource.java blastoutputSource.java hmmeroutputSource.java fullfileSource.java
 APPLICATION_SOURCE = move.java adddb.java getfasta.java dbutil.java getdeleted.java
 INPUT_SOURCE = LongRecordReader.java DatInputFormat.java
 EXPERIMENT_SOURCES = countupdates.java cleandb.java inspectpipeline.java
 DEPRECATED_SOURCE = cmpdb.java countupdates.java getdat.java getdeleted.java annotateBlastRes.java blastoutputformat.java combineBlastOutput.java
 SOURCES = $(ENTRY_SOURCES) $(SOURCE_SOURCES) $(APPLICATION_SOURCE) $(INPUT_SOURCE) $(EXPERIMENT_SOURCES)
+
+
+
+# ICE 2 cloudera
+#CLASSPATH_JAVA = /usr/share/cmf/lib/cdh4/
+CLASSPATH_JAVA = `hadoop classpath`:/opt/cloudera/parcels/CDH-4.3.0-1.cdh4.3.0.p0.22/lib/hbase/hbase.jar
+#CLASSPATH_JAVA = /opt/cloudera/parcels/CDH-4.3.0-1.cdh4.3.0.p0.22/lib/hadoop-0.20-mapreduce/hadoop-core.jar:/opt/cloudera/parcels/CDH-4.3.0-1.cdh4.3.0.p0.22/lib/hbase/hbase.jar:/opt/cloudera/parcels/CDH-4.3.0-1.cdh4.3.0.p0.22/lib/zookeeper/zookeeper.jar
+
 # ICE 2
-CLASSPATH_JAVA = /state/partition1/local/hadoop-1.0.4/hadoop-core-1.0.4.jar:/state/partition1/local/hbase-0.94.5/hbase-0.94.5.jar:/state/partition1/local/zookeeper-3.4.5/zookeeper-3.4.5.jar
+#CLASSPATH_JAVA = /state/partition1/local/hadoop-1.0.4/hadoop-core-1.0.4.jar:/state/partition1/local/hbase-0.94.5/hbase-0.94.5.jar:/state/partition1/local/zookeeper-3.4.5/zookeeper-3.4.5.jar
 
 # ICE 1
 #CLASSPATH_JAVA = /usr/lib/hadoop-0.20/hadoop-core.jar:/usr/lib/hbase/hbase-0.90.3-cdh3u1.jar:/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar:/home/epe005/DiffDBMR/diffdb_classes/:/usr/lib/zookeeper/zookeeper.jar:.

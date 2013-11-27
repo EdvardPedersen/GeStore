@@ -18,19 +18,24 @@ import java.nio.ByteBuffer;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import java.util.regex.*;
+//import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class hmmEntry extends genericEntry{
     String[] mandatoryFields = {"NAME", "LENG", "ALPH", "HMM"};
     String[] optionalFields = {"ACC", "DESC", "RF", "CS", "MAP", "DATE", "COM", "NSEQ", "EFFN", "CKSUM", "GA", "TC", "NC", "STATS", "COMPO"};
+    int numField;
     public hmmEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
-        fieldKeys.put("ORDER", "");
+        //fieldKeys.put("ORDER", "");
         selfConfig = config;
+        numField = 0;
     }
     
     public hmmEntry() {
         fieldKeys = new Hashtable<String, String>();
-        fieldKeys.put("ORDER", "");
+        //fieldKeys.put("ORDER", "");
+        numField = 0;
     }
     
     // Parses the string to add to a certain field
@@ -51,20 +56,25 @@ public class hmmEntry extends genericEntry{
             typeIn = "ID";
         }
         String existing = (String)fieldKeys.get(typeIn);
-        Integer offset = 0;
+//        Integer offset = 0;
+        numField += 1;
         if(existing != null) {
-            StringBuilder putString = new StringBuilder(existing.length() + entry.length() + 5);
-            offset = existing.length();
-            putString.append(existing);
-            putString.append(entry);
-            putString.append("\n");
-            //String putString = existing + entry + "\n";
-            fieldKeys.put(typeIn, new String(putString));
+            //StringBuilder putString = new StringBuilder(existing.length() + entry.length() + 5);
+            //offset = existing.length();
+            //putString.append(existing);
+            //putString.append(entry);
+            //putString.append("\n");
+//            numHMM += 1;
+            String putString = entry + "\n";
+            fieldKeys.put(Integer.toString(numField) + "-" + typeIn, new String(putString));
         } else {
             String putString = entry + "\n";
-            fieldKeys.put(typeIn, putString);
+            if(typeIn.equals("ID")) {
+                fieldKeys.put(typeIn, putString);
+            } 
+            fieldKeys.put(Integer.toString(numField) + "-" + typeIn, putString);
         }
-        fieldKeys.put("ORDER", fieldKeys.get("ORDER") + typeIn + ":" + offset.toString() + "\n");
+        //fieldKeys.put("ORDER", fieldKeys.get("ORDER") + typeIn + ":" + offset.toString() + "\n");
         numEntries += 1;
         return true;
     }
@@ -127,7 +137,7 @@ public class hmmEntry extends genericEntry{
     // Returns an array of strings containing each field based on type and options
     public String[] get(String type, String options) {
         if (type.equals("hmm")) {
-            String[] retString = {getHmm().toString(), ""};
+            String[] retString = {getHmm2().toString(), ""};
             return retString;
         }
         String[] retString = {null, null};
@@ -162,6 +172,42 @@ public class hmmEntry extends genericEntry{
     
     // PRIVATE
     
+    private Text getHmm2() {
+      StringBuilder outString = new StringBuilder();
+      List<String> l = new LinkedList<String>(fieldKeys.keySet());
+      ConcurrentSkipListSet<String> list2 = new ConcurrentSkipListSet<String>(new HMMComparator());
+      for(String key : l) {
+        if(key.split(" ")[0].split("-").length < 2) {
+ //         l.remove(key);
+        } else {
+          list2.add(key);
+        }
+      }
+//      Collections.sort(list2, new HMMComparator());
+//      outString.append(fieldKeys.get("ID"));
+      for(String key : list2) {
+        if(key.equals("ID")) {
+          continue;
+        }
+        outString.append(fieldKeys.get(key));
+      }
+      return new Text(outString.toString().replaceAll("\0", ""));
+    }
+
+    private class HMMComparator implements Comparator<String>{
+      @Override
+      public int compare(String str1, String str2) {
+
+        // extract numeric portion out of the string and convert them to int
+        // and compare them, roughly something like this
+
+        int num1 = Integer.parseInt(str1.split("-")[0]);
+        int num2 = Integer.parseInt(str2.split("-")[0]);
+
+        return num1 - num2;
+      }
+    }
+
     private Text getHmm() {
         Text outText = new Text();
         String order = fieldKeys.get("ORDER");

@@ -214,8 +214,8 @@ public class adddb extends Configured implements Tool{
         Path tempFile = new Path(tempHDFSPath + baseFile);
         
         File target = new File(inputDir);
-        
-        if(target.isDirectory()) {
+        System.out.println(type);
+        if(target.isDirectory() || type.equals("fullfile")) {
             fs.copyFromLocalFile(new Path(inputDir), new Path(tempHDFSPath));
             FileStatus [] files = fs.globStatus(new Path(tempHDFSPath + "/*"));
             List<String> filenames = getFilesAndChecksums(files, fs, timestamp, targetDir, tempHDFSPath);
@@ -224,6 +224,7 @@ public class adddb extends Configured implements Tool{
             for(String file : filenames) {
                 String output = file + "\n";
                 newFile.write(output.getBytes());
+                System.out.println(output);
             }
             newFile.close();
             DatInputFormat.addInputPath(job, new Path(tempHDFSPath + dirFile));
@@ -256,6 +257,7 @@ public class adddb extends Configured implements Tool{
         numReduceTableTesters.close();
         job.setNumReduceTasks(regions);
         job.setNumReduceTasks(0);
+        TableMapReduceUtil.addDependencyJars(job); 
         
         System.out.println("Table: " + outputTable + "\n");
         

@@ -11,7 +11,7 @@ def main(args):
   home_folder = os.getenv('HOME')
   usage = "%prog [options] file"
   parser = OptionParser(usage, description="Get files from GeStore")
-  #parser.add_option('--ID', help='The ID for the data entered into GeStore, used to access the data')
+  #parser.add_option('--ID', '-i', help='The ID for the data entered into GeStore, used to access the data')
   parser.add_option('--run', '-r', help="Identifier for the pipeline being used")
   parser.add_option('--task', '-t', help="Identifier for the task of the pipeline")
   #parser.add_argument('--path')

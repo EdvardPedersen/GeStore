@@ -44,10 +44,12 @@ public class pfamEntry extends genericEntry{
         }
         String existing = (String)fieldKeys.get(typeIn);
         if(existing != null) {
-            StringBuilder putString = new StringBuilder(existing.length() + entry.length() + 5);
-            putString.append(existing);
-            putString.append(entry);
-            putString.append("\n");
+            //StringBuilder putString = new StringBuilder(existing.length() + entry.length() + 5);
+            //putString.append(existing);
+            //putString.append(entry);
+            //putString.append("\n");
+            String putString = entry + "\n";
+            typeIn = Integer.toString(fieldKeys.size());
             //String putString = existing + entry + "\n";
             fieldKeys.put(typeIn, new String(putString));
         } else {
