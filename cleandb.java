@@ -43,12 +43,19 @@ public class cleandb extends Configured implements Tool{
             if(table.getNameAsString().startsWith("gestore_")) {
                 //BufferedReader reader = new BufferedReader(System.in);
                 Console console = System.console();
-                System.out.println("Delete " + table.getNameAsString() + "? (y/n)");
-                if(console.readLine().equals("y")) {
-                    System.out.println("Deleting table...");
+                if(args.length > 0) {
+                  if(args[0].equals("f")) {
                     hbAdmin.disableTable(table.getName());
                     hbAdmin.deleteTable(table.getName());
-                    System.out.println("Table deleted!");
+                    continue;
+                  }
+                }
+                System.out.println("Delete " + table.getNameAsString() + "? (y/n)");
+                if(console.readLine().equals("y")) {
+                  System.out.println("Deleting table...");
+                  hbAdmin.disableTable(table.getName());
+                  hbAdmin.deleteTable(table.getName());
+                  System.out.println("Table deleted!");
                 }
             }
         }

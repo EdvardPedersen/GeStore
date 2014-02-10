@@ -230,7 +230,7 @@ public class move extends Configured implements Tool{
         curConf.put("file_id", argConf.get("file"));
         curConf.put("local_path", argConf.get("path", ""));
         curConf.put("type", argConf.get("type", "l2r"));
-        curConf.put("timestamp_start", argConf.get("timestamp_start", "0"));
+        curConf.put("timestamp_start", argConf.get("timestamp_start", "1"));
         curConf.put("timestamp_stop", argConf.get("timestamp_stop", Integer.toString(Integer.MAX_VALUE)));
         curConf.put("delimiter", argConf.get("regex", "ID=.*"));
         curConf.put("taxon", argConf.get("taxon", "all"));
@@ -359,7 +359,9 @@ public class move extends Configured implements Tool{
             E.printStackTrace();
             return null;
         }
-               
+        if(Integer.parseInt(config.get("timestamp_start")) > Integer.parseInt(config.get("timestamp_stop"))) {
+          return null;
+        }       
         System.out.println("Getting DB for timestamp: " + config.get("timestamp_start") + " to " + config.get("timestamp_stop"));
         
         String final_result = getFullPath(config);
@@ -395,6 +397,10 @@ public class move extends Configured implements Tool{
                     return null;
                 }
                 FileStatus [] files = (FileStatus [])retVal;
+                if(files == null) {
+                    System.out.println("Error getting file, no files returned...");
+                    return null;
+                }
                 
                 for(FileStatus file : files) {
                     Path cur_file = file.getPath();
@@ -421,9 +427,13 @@ public class move extends Configured implements Tool{
 
         String rowName = config.get("file_id") + config.get("run_id") + "_";
         if(config.get("task_id") != "") {
-            rowName = rowName + String.format("%04d", new Integer(config.get("task_id")));
+            try {
+              rowName = rowName + String.format("%04d", new Integer(config.get("task_id")));
+            } catch (NumberFormatException E) {
+              rowName = rowName + config.get("task_id");
+            }
         }
-        System.out.println(rowName);
+        System.out.println("Row name:" + rowName);
         Get timestampGet = new Get(rowName.getBytes());
         timestampGet.addColumn("d".getBytes(), "update".getBytes());
         Result timestampResult = db_util.doGet(config.get("db_name_updates"), timestampGet);

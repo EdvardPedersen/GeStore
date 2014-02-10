@@ -129,6 +129,7 @@ public class adddb extends Configured implements Tool{
             context.getCounter(ENTRY_COUNTER.EXISTING).increment(1);
             try {
                 context.write(key, newPut);
+                System.out.println("Puting key in db: " + newPut.toString());
             } catch(IOException e) {
                 System.out.println(newPut.toString());
                 System.out.println(e.toString());
@@ -154,7 +155,7 @@ public class adddb extends Configured implements Tool{
         Configuration argConf = getConf();
         String inputDir = argConf.get("input");
         String outputTable = argConf.get("table");
-        String timestamp  = argConf.get("timestamp");
+        String timestamp  = argConf.get("timestamp", Integer.toString(Integer.MAX_VALUE));
         String type = argConf.get("type");
         String targetDir = argConf.get("target_dir", "") + timestamp;
         Boolean quick_add = argConf.get("quick_add", "false").matches("(?i).*true.*");
@@ -174,7 +175,7 @@ public class adddb extends Configured implements Tool{
         try{
             config.set("task_id", String.format( "%04d", new Integer(argConf.get("task_id", ""))));
         } catch (NumberFormatException E) {
-            config.set("task_id", "");
+            config.set("task_id", argConf.get("task_id", ""));
         }
         
         System.out.println("Run_id " + config.get("run_id"));
@@ -216,6 +217,12 @@ public class adddb extends Configured implements Tool{
         File target = new File(inputDir);
         System.out.println(type);
         if(target.isDirectory() || type.equals("fullfile")) {
+            Path tempPath = new Path(tempHDFSPath);
+            try{
+                fs.getFileStatus(tempPath).isDirectory();
+            } catch (FileNotFoundException E) {
+                fs.mkdirs(tempPath);
+            }
             fs.copyFromLocalFile(new Path(inputDir), new Path(tempHDFSPath));
             FileStatus [] files = fs.globStatus(new Path(tempHDFSPath + "/*"));
             List<String> filenames = getFilesAndChecksums(files, fs, timestamp, targetDir, tempHDFSPath);
@@ -224,7 +231,7 @@ public class adddb extends Configured implements Tool{
             for(String file : filenames) {
                 String output = file + "\n";
                 newFile.write(output.getBytes());
-                System.out.println(output);
+                System.out.println("File for input: " + output);
             }
             newFile.close();
             DatInputFormat.addInputPath(job, new Path(tempHDFSPath + dirFile));
@@ -271,7 +278,7 @@ public class adddb extends Configured implements Tool{
             System.out.println("Error running job: " + E.toString());
             E.printStackTrace();
         }
-        fs.delete(tempFile, true);
+        //fs.delete(tempFile, true);
         Put file_put = db_util.getPut(outputTable);
         file_put.add("d".getBytes(), "source".getBytes(), type.getBytes());
         if(config.get("run_id").isEmpty()) {

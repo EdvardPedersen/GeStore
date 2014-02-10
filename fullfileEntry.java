@@ -17,57 +17,80 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import java.util.regex.*;
 
-public class hmmeroutputEntry extends genericEntry{
-    String [] requiredFields = {"target_name", 
-                                "target_accession", 
-                                "tlen", 
-                                "query_name", 
-                                "accession", 
-                                "qlen", 
-                                "e-value", 
-                                "score", 
-                                "bias", 
-                                "dnum", 
-                                "of", 
-                                "c-evalue",
-                                "i-evalue",
-                                "score",
-                                "bias",
-                                "from_hmm",
-                                "to_hmm",
-                                "from_ali",
-                                "to_ali",
-                                "from_env",
-                                "to_env",
-                                "acc",
-                                "description" };
-    public hmmeroutputEntry(Configuration config) {
+public class fullfileEntry extends genericEntry{
+    FileSystem hdfs;
+    public fullfileEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
+        try{
+            hdfs = FileSystem.get(config);
+        } catch (IOException E) {
+            System.out.println("Error generating filesystem: " + E.toString());
+        }
         selfConfig = config;
     }
     
-    public hmmeroutputEntry() {
+    public fullfileEntry() {
         fieldKeys = new Hashtable<String, String>();
     }
     
     // Parses the string to add to a certain field
     public boolean addEntry(String entry) {
-        String [] fields = entry.split(" +");
-        if(fields.length < 5)
-            return false;
+        String [] pathHashTimestamp = entry.split("\t");
+
+	String inputFile = pathHashTimestamp[0].substring(pathHashTimestamp[0].lastIndexOf("/") + 1);
         
-        for(Integer i = 0; i < fields.length; i++) {
-            if(requiredFields.length > i) {
-              fieldKeys.put(requiredFields[i], fields[i]);
-            } else {
-              fieldKeys.put("extra", fields[i]);
-            }
+        Path targetPath = new Path(pathHashTimestamp[3]);
+        Path sourcePath = new Path(pathHashTimestamp[0]);
+        Path sourceBase = new Path(pathHashTimestamp[4].trim());
+        
+        FileStatus targetStat;
+        FileStatus baseStat;
+        
+        try {
+            hdfs.mkdirs(targetPath);
+            targetStat = hdfs.getFileStatus(targetPath);
+            baseStat = hdfs.getFileStatus(sourceBase);
+        } catch (IOException E) {
+            System.out.println("Error getting file status for files: " + E.toString());
+            return false;
         }
         
-        fieldKeys.put("ID", entry);
+        String suffix = sourcePath.toString().substring(baseStat.getPath().toString().length());
         
-        numEntries += 1;
+        if(hdfs != null) {
+            try {
+                hdfs.mkdirs(targetStat.getPath().suffix(suffix).getParent());
+                try {
+                    hdfs.rename(sourcePath, targetStat.getPath().suffix(suffix));
+                } catch (IOException E) {
+                    System.out.println("ERROR: Moving file " + sourcePath.toString() + " to " + targetStat.getPath().suffix(suffix).toString());
+                    System.out.println("Error: " + E.toString());
+                    if(!hdfs.isFile(sourcePath)) {
+                        System.out.println("REASON: Source is not a file!");
+                    }
+                    return false;
+                }
+            } catch (IOException E) {
+                System.out.println("Unable to copy file" + E.toString());
+                return false;
+            }
+        } else {
+            System.out.println("No filesystem!");
+        }
+        
+        fieldKeys.put("ID", inputFile);
+        fieldKeys.put("HASH", pathHashTimestamp[1]);
+        fieldKeys.put("PATH", targetPath + suffix);
+        fieldKeys.put("SUFFIX", suffix);
+
+        System.out.println("File:" + inputFile);
+        
+        // IDEAS:
+        // Key = hash, value = file position
+        // Key = filename, value = file position, value2 = hash
+        
         return true;
     }
     
@@ -109,39 +132,29 @@ public class hmmeroutputEntry extends genericEntry{
         }
         return retPut;
     }
-    
-    public String[] getRegexes() {
-        String[] retString = {".*", ".*"};
-        return retString;
-    }
 
     // Check if the entry is well-formed, based on type 
     // (e.g. if all the fields required to do a get of a certain type exist)
     public int sanityCheck(String type){
-        if(type.equals("blastoutput")) {
+        if(type.equals("FULL")) {
             String ID = getTableEntry("ID");
-            
             if(null == ID) {
                 return 0;
-            } else {
-                for(String entry : requiredFields) {
-                    if(getTableEntry(entry) == null) {
-                        return -1;
-                    }
-                }
+            } else if(null != ID) {
+                return 1;
             }
         }
-        return 1;
+        return -1;
     }
     
     // Returns an array of strings containing each field based on type and options
     public String[] get(String type, String options) {
-        if(type.equals("blastoutput")) {
-            if(sanityCheck(type) == 1) {
-                return getBlastOutput(options);
-            }
+        if (type.equals("files")) {
+            String[] retString = {getFileList().toString(), ""};
+            return retString;
         }
-        return null;
+        String[] retString = {null, null};
+        return retString;
     }
 
     // Returns list of updated fields
@@ -157,6 +170,16 @@ public class hmmeroutputEntry extends genericEntry{
             String key = (String)field.nextElement();
             String localVal = (String)getTableEntry(key);
             String remoteVal = (String)entry.getTableEntry(key);
+            if(key.equals("PATH") && getTableEntry("HASH").equals(entry.getTableEntry("HASH"))) {
+                // If the hash is the same, do not add the new path!
+                // And delete the new file to save storage space
+                try {
+                    hdfs.delete(new Path(localVal),false);
+                } catch (IOException E) {
+                    System.out.println("WARNING: Tried to delete file non-successfully, something might be wrong in the data! Exception:" + E.toString());
+                }
+                continue;
+            }
             if(!localVal.equals(remoteVal)) {
                 retList.add(key);
             }
@@ -164,14 +187,16 @@ public class hmmeroutputEntry extends genericEntry{
         return retList;
     }
     
+    public String[] getRegexes() {
+        String[] retString = {".*", ".*"};
+        return retString;
+    }
+    
     
     // PRIVATE
-    private String[] getBlastOutput(String taxon) {
-        String rets = new String();
-        for(String entry : requiredFields) {
-            rets = rets + getTableEntry(entry) + "\t";
-        }
-        String[] retString = {rets.trim(),""};
-        return retString;
+    
+    private Text getFileList() {
+        Text outText = new Text(fieldKeys.get("PATH") + "\t" + fieldKeys.get("SUFFIX"));
+        return outText;
     }
 }

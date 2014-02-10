@@ -18,54 +18,27 @@ import java.nio.ByteBuffer;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 
-public class hmmeroutputEntry extends genericEntry{
-    String [] requiredFields = {"target_name", 
-                                "target_accession", 
-                                "tlen", 
-                                "query_name", 
-                                "accession", 
-                                "qlen", 
-                                "e-value", 
-                                "score", 
-                                "bias", 
-                                "dnum", 
-                                "of", 
-                                "c-evalue",
-                                "i-evalue",
-                                "score",
-                                "bias",
-                                "from_hmm",
-                                "to_hmm",
-                                "from_ali",
-                                "to_ali",
-                                "from_env",
-                                "to_env",
-                                "acc",
-                                "description" };
-    public hmmeroutputEntry(Configuration config) {
+public class pclEntry extends genericEntry{
+    //String [] requiredFields = {"query_id", "subject_id", "identity", "align_length", "mismatches", "gaps", "query_start", "q_stop", "s_start", "s_stop", "e_value", "hit"};
+    public blastoutputEntry(Configuration config) {
         fieldKeys = new Hashtable<String, String>();
+        //Get first 2 lines from config
         selfConfig = config;
     }
     
-    public hmmeroutputEntry() {
+    public blastoutputEntry() {
         fieldKeys = new Hashtable<String, String>();
     }
     
     // Parses the string to add to a certain field
     public boolean addEntry(String entry) {
-        String [] fields = entry.split(" +");
-        if(fields.length < 5)
-            return false;
+        String [] fields = entry.split("\t");
         
-        for(Integer i = 0; i < fields.length; i++) {
-            if(requiredFields.length > i) {
-              fieldKeys.put(requiredFields[i], fields[i]);
-            } else {
-              fieldKeys.put("extra", fields[i]);
-            }
+        for(Integer i = 1; i < fields.length; i++) {
+            //fieldKeys.put(field_from_config[i], fields[i]);
         }
         
-        fieldKeys.put("ID", entry);
+        fieldKeys.put("ID", fields[0]);
         
         numEntries += 1;
         return true;

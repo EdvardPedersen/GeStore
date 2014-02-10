@@ -1,6 +1,6 @@
 ENTRY_SOURCES = uniprotEntry.java genericEntry.java fastaEntry.java glimmerpredictEntry.java pfamEntry.java hmmEntry.java priamEntry.java blastoutputEntry.java hmmeroutputEntry.java fullfileEntry.java
 SOURCE_SOURCES = sourceType.java uniprotSource.java sprot.java trembl.java fastaSource.java glimmerpredictSource.java pfamSource.java hmmSource.java priamSource.java blastoutputSource.java hmmeroutputSource.java fullfileSource.java
-APPLICATION_SOURCE = move.java adddb.java getfasta.java dbutil.java getdeleted.java
+APPLICATION_SOURCE = move.java adddb.java getfasta.java dbutil.java getdeleted.java fswrapper.java
 INPUT_SOURCE = LongRecordReader.java DatInputFormat.java
 EXPERIMENT_SOURCES = countupdates.java cleandb.java inspectpipeline.java
 DEPRECATED_SOURCE = cmpdb.java countupdates.java getdat.java getdeleted.java annotateBlastRes.java blastoutputformat.java combineBlastOutput.java
