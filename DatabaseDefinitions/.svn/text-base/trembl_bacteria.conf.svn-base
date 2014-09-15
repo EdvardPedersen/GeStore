@@ -1,8 +1,0 @@
-<database>
-    <name>trembl_bacteria</name>
-    <path>/uniprot/uniprot_trembl_bacteria.fas</path>
-    <sequence_type>protein</sequence_type>
-    <database_format>blast</database_format>
-    <database_taxon>bacteria</database_taxon>
-</database>
-

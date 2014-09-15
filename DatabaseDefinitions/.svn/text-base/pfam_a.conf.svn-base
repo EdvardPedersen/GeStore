@@ -1,8 +1,0 @@
-<database>
-    <name>pfam-a</name>
-    <path>/pfam/Pfam-A.hmm</path>
-    <sequence_type>protein</sequence_type>
-    <database_format>pfam</database_format>
-    <database_taxon>all</database_taxon>
-</database>
-

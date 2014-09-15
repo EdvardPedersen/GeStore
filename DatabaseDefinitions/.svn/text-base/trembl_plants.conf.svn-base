@@ -1,8 +1,0 @@
-<database>
-    <name>trembl_plants</name>
-    <path>/uniprot/uniprot_trembl_plants.fas</path>
-    <sequence_type>protein</sequence_type>
-    <database_format>blast</database_format>
-    <database_taxon>plants</database_taxon>
-</database>
-
