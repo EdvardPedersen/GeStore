@@ -41,9 +41,10 @@ public class fullfileEntry extends genericEntry{
 
 	String inputFile = pathHashTimestamp[0].substring(pathHashTimestamp[0].lastIndexOf("/") + 1);
         
-        Path targetPath = new Path(pathHashTimestamp[3]);
+        Path targetPath = new Path(pathHashTimestamp[3] + selfConfig.get("task_id", ""));
         Path sourcePath = new Path(pathHashTimestamp[0]);
         Path sourceBase = new Path(pathHashTimestamp[4].trim());
+	Path extendedBase = new Path(pathHashTimestamp[5]);
         
         FileStatus targetStat;
         FileStatus baseStat;
@@ -80,7 +81,8 @@ public class fullfileEntry extends genericEntry{
             System.out.println("No filesystem!");
         }
         
-        fieldKeys.put("ID", inputFile);
+        fieldKeys.put("ID",  selfConfig.get("task_id", "") + pathHashTimestamp[5].substring(0, pathHashTimestamp[5].lastIndexOf("/")) );
+	System.out.println("Task-id:" + selfConfig.get("task_id") + " file " + extendedBase);
         fieldKeys.put("HASH", pathHashTimestamp[1]);
         fieldKeys.put("PATH", targetPath + suffix);
         fieldKeys.put("SUFFIX", suffix);
@@ -131,6 +133,11 @@ public class fullfileEntry extends genericEntry{
             }
         }
         return retPut;
+    }
+
+    public byte[] getRowID() {
+        String idStripped = (String)fieldKeys.get("ID").trim();
+        return idStripped.getBytes();
     }
 
     // Check if the entry is well-formed, based on type 
@@ -196,7 +203,7 @@ public class fullfileEntry extends genericEntry{
     // PRIVATE
     
     private Text getFileList() {
-        Text outText = new Text(fieldKeys.get("PATH") + "\t" + fieldKeys.get("SUFFIX"));
+        Text outText = new Text(fieldKeys.get("PATH") + "\t" + fieldKeys.get("SUFFIX") + "\t" + fieldKeys.get("ID"));
         return outText;
     }
 }

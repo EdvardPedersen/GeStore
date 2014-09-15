@@ -27,6 +27,8 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.fs.*;
 
+import org.diffdb.dbutil.*;
+
 public class fswrapper {
   HBaseConfiguration conf;
   String full_namespace;
@@ -34,16 +36,21 @@ public class fswrapper {
   HTable ourTable;
   FileSystem fs;
   Scan ourScan;
+  dbutil db_util;
   
 
 
   public fswrapper(String namespc) {
     try {
       conf = new HBaseConfiguration();
+      db_util = new dbutil(conf);
       fs = FileSystem.get(conf);
       full_namespace = "gestore_" + namespc;
       namespace = namespc;
-      ourTable = new HTable(conf, full_namespace.getBytes());
+      if(!db_util.register_database(namespc, true)) {
+        throw new Exception("Trouble creating table");
+      }
+      ourTable = db_util.getTable(namespace);
     } catch (Exception E) {
       System.out.println("Problem with Hadoop: " + E.toString());
     }
@@ -76,6 +83,10 @@ public class fswrapper {
     // return list of files
 
     ArrayList<String> files = lsRec(path);
+
+    if(files == null) {
+      return null;
+    }
     //For each in file, remove if it contains a / after path
     
     Iterator <String> i = files.iterator();
@@ -84,7 +95,11 @@ public class fswrapper {
        String curFile = i.next();
        if(curFile.indexOf('/', path.length()) > 1) {
          i.remove();
+         System.out.println("Removing: " + curFile);
        }
+    }
+    for(String file : files) {
+      System.out.println("LSFILE: " + file);
     }
     return files;
   }
@@ -93,14 +108,20 @@ public class fswrapper {
     // Do gestore_get
     //  Get pipeline ID from filename?
     //  Might need fix in IMP code to append timestamp to meta-data filenames for retrieval
+    if(path == null) {
+      RuntimeException E = new RuntimeException("Trying to get file that is NULL");
+      throw(E);
+    }
     String supPath = getSuperPath(path);
     ArrayList<String> returns = new ArrayList<String>();
     System.out.println("supPath = " + supPath);
     String subPath = "";
-    if(!supPath.equals(path)) {
-      subPath = path.substring(supPath.length());
+    if(!supPath.equals(path) && supPath != null ) {
+      int supPathLength = 1;
+      String subString = path.substring(supPathLength);
+      subPath = subString;
     }
-    String [] args = {"-Dtype=r2l", "-Dfile=" + namespace, "-Dtask=" + supPath, "-conf=/home/epe005/gestore/gestore-conf.xml"};
+    String [] args = {"-Dtype=r2l", "-Dfile=" + namespace,"-Dfull_run=true" , "-Dtask=" + supPath, "-conf=/home/epe005/gestore/gestore-conf.xml"};
     if(run_gestore(args) != 0) {
       System.out.println("Problem getting file...");
     } else {
@@ -111,8 +132,13 @@ public class fswrapper {
       List<String> outFiles = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(namespace), Charset.defaultCharset());
       for(String line : outFiles) {
         String [] paths = line.split("\t");
-        String hitPath = paths[1].substring(paths[1].indexOf(supPath) + supPath.length() + 2);
-        if(hitPath.equals(subPath.substring(1))) {
+        String hdfsPath = paths[0];
+        String okPath = paths[1];
+        System.out.println("hdfsPath = " + hdfsPath + "  supPath = " + supPath + " second path: " + okPath);
+        int indexOne = hdfsPath.indexOf(supPath);
+        int indexTwo = supPath.length();
+        String hitPath = paths[0].substring(paths[0].indexOf(paths[1]) + 1);
+        if(hitPath.equals(subPath)) {
           System.out.println("File found!");
           //fs.copyToLocalFile(false, new Path(paths[0]), new Path("."));
           returns.add(paths[0]);
@@ -120,12 +146,13 @@ public class fswrapper {
       }
     } catch (Exception E) {
       System.out.println("Error reading result file...");
+      E.printStackTrace();
     }
 
     return returns;
   }
 
-  public ArrayList<String> getFiles(String path, String localPath) {
+  public ArrayList<String> getFiles(String path) {
     // Do gestore_get for all files in directory
     String supPath = getSuperPath(path);
     ArrayList<String> returns = new ArrayList<String>();
@@ -134,7 +161,7 @@ public class fswrapper {
     if(!supPath.equals(path)) {
       subPath = path.substring(supPath.length());
     }
-    String [] args = {"-Dtype=r2l", "-Dfile=" + namespace, "-Dtask=" + supPath, "-conf=/home/epe005/gestore/gestore-conf.xml"};
+    String [] args = {"-Dtype=r2l", "-Dfile=" + namespace, "-Dfull_run=true", "-Dtask=" + supPath, "-conf=/home/epe005/gestore/gestore-conf.xml"};
     if(run_gestore(args) != 0) {
       System.out.println("Problem getting file...");
     } else {
@@ -144,12 +171,20 @@ public class fswrapper {
     try {
       List<String> outFiles = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(namespace), Charset.defaultCharset());
       for(String line : outFiles) {
+	
         String [] paths = line.split("\t");
-        returns.add(paths[0]);
+        System.out.println("GETFILESRESULT: " + line + " COMP " + path);
+        if(paths[2].contains(path)){
+          returns.add(paths[0]);
+        }
       }
     } catch (Exception E) {
       System.out.println("Error reading result file...");
+      E.printStackTrace();
     }
+    /*if(returns.size() == 0) {
+      return null;
+    }*/
     return returns;
   }
 
@@ -159,10 +194,10 @@ public class fswrapper {
     String [] args = {"-Dtype=l2r", "-Dfile=" + namespace, "-Dtask=" + dst_path, "-Dpath=" + src_path, "-Dformat=fullfile", "-conf=/home/epe005/gestore/gestore-conf.xml"};
 
     if(run_gestore(args) != 0) {
-      System.out.println("Problem putting file into GeStore");
+      System.out.println("Problem putting file into GeStore: " + dst_path + "ns: " + namespace);
       return 1;
     } else {
-      System.out.println("File put into GeStore successfully");
+      System.out.println("File put into GeStore successfully: " + dst_path + " ns: " + namespace);
       return 0;
     }
   }
@@ -293,11 +328,20 @@ public class fswrapper {
         runner.lsRec(args[2]);
       case "getfile":
         System.out.println("Getting file...");
-        runner.getFile(args[2]);
+        ArrayList<String> files = runner.getFile(args[2]);
+        for(String file : files) {
+          System.out.println("File: " + file);
+        }
+        break;
+      case "getfiles":
+        ArrayList<String> filess = runner.getFiles(args[2]);
+        for(String file : filess) {
+          System.out.println("GETFILES: " + file);
+        }
         break;
       case "putfile":
         System.out.println("Putting file...");
-        runner.putFile(args[3], args[2]);
+        runner.putFile(args[2], args[3]);
         break;
       case "rmr":
         System.out.println("Removing file...");
@@ -347,11 +391,15 @@ public class fswrapper {
         System.out.println(ourScan.toString());
       }
       System.out.println("Lenght of returned string: " + dst_path);
-      return dst_path;
+      if(dst_path != null) {
+        return dst_path;
+      } else {
+        return "";
+      }
     } catch (Exception E) {
       System.out.println("Exception caught! " + E.toString());
       E.printStackTrace(System.out);
-      return null;
+      return "";
     }
   }
 

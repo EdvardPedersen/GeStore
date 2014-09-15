@@ -77,6 +77,10 @@ public class dbutil{
         HTable ourTable = (HTable)databases.get(getRealName(tableName));
         return ourTable.get(getAction);
     }
+
+    public HTable getTable(String tableName) throws Exception {
+      return (HTable)databases.get(getRealName(tableName));
+    }
     
     public void doPut(String tableName, Put putAction) throws Exception {
         HTable ourTable = (HTable)databases.get(getRealName(tableName));

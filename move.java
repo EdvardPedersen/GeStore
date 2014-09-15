@@ -145,6 +145,9 @@ public class move extends Configured implements Tool{
         Result file_get = db_util.doGet(confArg.get("db_name_files"), file_id_get);
         if(!file_get.isEmpty()) {
             boolean found = hasFile(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg));
+            if(confArg.get("source").equals("fullfile")) {
+                found = false;
+            }
             String filenames_put = getFileNames(db_util, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg));
             // Filename not found in file database
             if (!found && type_move == toFrom.REMOTE2LOCAL){
@@ -155,7 +158,9 @@ public class move extends Configured implements Tool{
                             return 1;
                         }
                         // Put generated file into file database
-                        putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), confArg.get("full_file_name"), confArg.get("source"));
+                        if(!confArg.get("format").equals("fullfile")) {
+	                        putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), confArg.get("full_file_name"), confArg.get("source"));
+			}
                     } else {
                         System.err.println("ERROR: Remote file not found, and cannot be generated!");
                         unlock(lockName);
@@ -177,7 +182,9 @@ public class move extends Configured implements Tool{
          */
         
         if(type_move == toFrom.LOCAL2REMOTE) {
-            putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg), confArg.get("source"));
+            if(!confArg.get("format").equals("fullfile")) {
+                putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), getFullPath(confArg), confArg.get("source"));
+            }
             putRunEntry(db_util, confArg.get("db_name_runs"), confArg.get("run_id"), confArg.get("file_id"), confArg.get("type"), confArg.get("timestamp_real"), confArg.get("timestamp_stop"), getFullPath(confArg), confArg.get("delimiter"));
             hdfs.copyFromLocalFile(new Path(confArg.get("local_path")), new Path(getFullPath(confArg)));
         } else if(type_move == toFrom.REMOTE2LOCAL) {
@@ -448,7 +455,7 @@ public class move extends Configured implements Tool{
         }
 
         if(tsKv == null) {
-          return null;
+          return new Long(Integer.MAX_VALUE);
         }
         Long latestVersion = new Long(tsKv.getTimestamp());
         return latestVersion;
@@ -470,7 +477,9 @@ public class move extends Configured implements Tool{
         }
         Put file_id_put = new Put(file_id.getBytes());
         file_id_put.add("d".getBytes(), "source".getBytes(), source.getBytes());
-        file_id_put.add("d".getBytes(), "filenames".getBytes(), all_paths.getBytes());
+        if(!source.equals("fullfile")){
+            file_id_put.add("d".getBytes(), "filenames".getBytes(), all_paths.getBytes());
+        }
         db_util.doPut(db_name, file_id_put);
         return true;
     }

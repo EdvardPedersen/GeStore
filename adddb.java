@@ -223,7 +223,13 @@ public class adddb extends Configured implements Tool{
             } catch (FileNotFoundException E) {
                 fs.mkdirs(tempPath);
             }
-            fs.copyFromLocalFile(new Path(inputDir), new Path(tempHDFSPath));
+            if(target.isDirectory()) {
+                fs.copyFromLocalFile(new Path(inputDir), new Path(tempHDFSPath));
+            } else {
+                fs.copyFromLocalFile(new Path(inputDir), new Path(tempHDFSPath + "/" + config.get("task_id").substring(config.get("task_id").lastIndexOf("/"))));
+                //fs.copyFromLocalFile(new Path(inputDir), new Path(tempHDFSPath));
+                System.out.println("TESTOUT1: " + tempHDFSPath + "/" + inputDir.substring(inputDir.lastIndexOf("/")) + " TASKID:" + config.get("task_id"));
+            }
             FileStatus [] files = fs.globStatus(new Path(tempHDFSPath + "/*"));
             List<String> filenames = getFilesAndChecksums(files, fs, timestamp, targetDir, tempHDFSPath);
             System.out.println(tempHDFSPath);
@@ -278,7 +284,7 @@ public class adddb extends Configured implements Tool{
             System.out.println("Error running job: " + E.toString());
             E.printStackTrace();
         }
-        //fs.delete(tempFile, true);
+        fs.delete(new Path(tempHDFSPath), true);
         Put file_put = db_util.getPut(outputTable);
         file_put.add("d".getBytes(), "source".getBytes(), type.getBytes());
         if(config.get("run_id").isEmpty()) {
@@ -313,7 +319,8 @@ public class adddb extends Configured implements Tool{
                 }
             } else {
                 try{
-                    String append = currentTarget.getPath().toString() + "\t" + fs.getFileChecksum(currentTarget.getPath()).toString() + "\t" + timestamp + "\t" + targetDir + "\t" + basePath;
+                    String extendedBase = currentTarget.getPath().toString().substring(new Path(basePath).makeQualified(fs).toString().length());
+                    String append = currentTarget.getPath().toString() + "\t" + fs.getFileChecksum(currentTarget.getPath()).toString() + "\t" + timestamp + "\t" + targetDir + "\t" + basePath + "\t" + extendedBase;
                     returnStrings.add(append);
                 } catch (IOException E) {
                     System.out.println("Error parsing files: " + E.toString());
