@@ -245,6 +245,7 @@ public class move extends Configured implements Tool{
         curConf.put("quick_add", argConf.get("quick_add", "false"));
         Boolean full_run = curConf.get("intermediate").matches("(?i).*true.*");
         curConf.put("format", argConf.get("format", "unknown"));
+        curConf.put("split", argConf.get("split", "1"));
         
         
         //Constants
@@ -567,7 +568,7 @@ public class move extends Configured implements Tool{
     
     private static String getFileName(Hashtable<String, String> config) {
         String retString =      config.get("file_id") + "_" + config.get("timestamp_start") + "_" + config.get("timestamp_stop") + "_" +
-                                config.get("delimiter").hashCode() + "_" + config.get("taxon");
+                                config.get("delimiter").hashCode() + "_" + config.get("taxon") + "_" + config.get("split");
         if(config.get("database").equals("y")) {
             return retString;
         } else {
@@ -606,6 +607,7 @@ public class move extends Configured implements Tool{
         System.out.println("-D regex = limit the results (ex. -Dregex=OC=.*bacteria.* for only bacterial results)");
         System.out.println("-D full_run = 'true' if you want to re-run the complete pipeline (ie. no incremental computations");
         System.out.println("-D format = the format of the file you are moving to or from");
+        System.out.println("-D split = the number of file splits to make");
         System.out.println("");
         System.out.println("Example usage:");
         System.out.println("hadoop jar diffdb.jar org.diffdb.move -Drun=23452 -Dfile=sprot -Dtype=r2l -Dtimestamp_start=201109 -Dtimestamp_stop=201112 -Dregex=OC=.*bacteria.* -Dfull_run=false");
