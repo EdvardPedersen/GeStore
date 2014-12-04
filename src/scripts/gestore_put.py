@@ -7,6 +7,8 @@ from optparse import OptionParser
 from collections import deque
 from subprocess import call
 
+GESTORE_PATH="/share/apps/gestore/move.jar"
+
 def main(args):
   home_folder = os.getenv('HOME')
   usage = "%prog [options] file gestore_id"
@@ -29,7 +31,7 @@ def main(args):
     return
   
   #Hardcoded, hooray
-  output = "hadoop jar /share/apps/gestore/move.jar org.diffdb.move -Dfile_id=" + arguments[1] + " -Dpath=" + arguments[0]
+  output = "hadoop jar " + GESTORE_PATH + " org.diffdb.move -Dfile_id=" + arguments[1] + " -Dpath=" + arguments[0]
   
   if(options.run):
     output += " -Drun=" + options.run
