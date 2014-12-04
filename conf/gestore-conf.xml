@@ -1,24 +1,30 @@
 <configuration>
+	<!-- Where to store cached files in HDFS -->
 	<property>
 		<name>hdfs_base_path</name>
 		<value>/user/${user.name}/files/</value>
 	</property>
+	<!-- Temporary storage in HDFS -->
 	<property>
 		<name>hdfs_temp_path</name>
 		<value>/tmp/gestore/</value>
 	</property>
+	<!-- Temporary storage on local file system -->
 	<property>
 		<name>local_temp_path</name>
 		<value>/state/partition1/tmp/gestore/</value>
 	</property>
+	<!-- Name of the table that contains file information -->
 	<property>
 		<name>hbase_file_table</name>
 		<value>files</value>
 	</property>
+	<!-- Name of the table that contains run information -->
 	<property>
 		<name>hbase_run_table</name>
 		<value>runs</value>
 	</property>
+	<!-- Name of the table that contains update information for meta-databases-->
 	<property>
 		<name>hbase_db_update_table</name>
 		<value>db_updates</value>
