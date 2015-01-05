@@ -7,7 +7,7 @@ import java.util.*;
 import java.io.File;
 
 public class uniprotSource implements sourceType{
-    uniprotSource() {
+    public uniprotSource() {
 
     }
     

@@ -10,7 +10,7 @@ Requirements
 ------------
 
 Installation requirements:
-* Java
+* Java JDK 1.7+
 * Maven
 
 Runtime requirements:

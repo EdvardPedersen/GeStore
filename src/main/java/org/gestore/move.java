@@ -23,11 +23,13 @@ import org.apache.zookeeper.*;
 import java.text.*;
 import org.apache.hadoop.hbase.zookeeper.*;
 import org.apache.zookeeper.data.*;
+import org.apache.log4j.Logger;
 //import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
 
 public class move extends Configured implements Tool{ 
     static ZooKeeper zkInstance;
     static ZooKeeperWatcher zkWatcher;
+    private static final Logger logger = Logger.getLogger(move.class);
     public static enum toFrom { LOCAL2REMOTE, REMOTE2LOCAL, LOCAL2LOCAL, REMOTE2REMOTE, ERROR}
     
     public static void main(String[] args) throws Exception { 
@@ -47,6 +49,7 @@ public class move extends Configured implements Tool{
         Date endDate = new Date(new Long(confArg.get("timestamp_stop")));
         Boolean full_run = confArg.get("intermediate").matches("(?i).*true.*");
         Boolean quick_add = confArg.get("quick_add").matches("(?i).*true.*");
+        logger.info("Running GeStore");
         
         //ZooKeeper setup
         Configuration config = HBaseConfiguration.create();
@@ -120,7 +123,7 @@ public class move extends Configured implements Tool{
                 Integer lastTimestamp = new Integer(last_timestamp);
                 lastTimestamp += 1;
                 last_timestamp = lastTimestamp.toString();
-                System.out.println("Last timestamp: " + last_timestamp + "End date:" + endDate);
+                logger.info("Last timestamp: " + last_timestamp + " End data: " + endDate);
                 Date last_run = new Date(run_file_prev.getTimestamp());
                 if(last_run.before(endDate) && !full_run) {
                     confArg.put("timestamp_start", last_timestamp);
@@ -131,7 +134,7 @@ public class move extends Configured implements Tool{
         Integer tse = new Integer(confArg.get("timestamp_stop"));
         Integer tss = new Integer(confArg.get("timestamp_start"));
         if(tss > tse) {
-            System.out.println("No new version");
+            logger.info("No new version of requested file.");
             return 0;
         }
         
@@ -162,15 +165,14 @@ public class move extends Configured implements Tool{
 	                        putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), confArg.get("full_file_name"), confArg.get("source"));
 			}
                     } else {
-                        System.err.println("ERROR: Remote file not found, and cannot be generated!");
+                        logger.warn("Remote file not found, and cannot be generated!");
                         unlock(lockName);
                         return 1;
                     }
             }
         } else {
             if(type_move == toFrom.REMOTE2LOCAL) {
-                System.err.println("ERROR: Remote file not found, and cannot be generated!");
-                System.err.println("config: " + confArg.toString() );
+                logger.warn("Remote file not found, and cannot be generated.");
                 unlock(lockName);
                 return 1;
             }
@@ -198,8 +200,11 @@ public class move extends Configured implements Tool{
                 if(suffix.length() > 0) {
                     cur_local_path = cur_local_path.suffix(new String("." + suffix));
                 }
-		System.out.println("Local path:" + cur_local_path + "\n");
-                hdfs.copyToLocalFile(cur_file, cur_local_path);
+                if(confArg.get("copy").equals("true")) {
+                    hdfs.copyToLocalFile(cur_file, cur_local_path);
+                } else {
+                    System.out.println(cur_local_path + "\t" + cur_file);
+                }
             }
         }
         unlock(lockName);
@@ -212,22 +217,22 @@ public class move extends Configured implements Tool{
     private static boolean setup(Hashtable<String, String> curConf, Configuration argConf) {
         
         if(argConf.get("file") == null) {
-            System.err.println("Missing file paramater!");
+            logger.fatal("Missing file parameter");
             System.exit(1);
         }
         
         if(argConf.get("hdfs_base_path") == null) {
-            System.err.println("Missing HDFS base path, check gestore-conf.xml");
+            logger.fatal("Missing HDFS base path, check gestore-conf.xml");
             System.exit(1);
         }
         
         if(argConf.get("hdfs_temp_path") == null) {
-            System.err.println("Missing HDFS temp path, check gestore-conf.xml");
+            logger.fatal("Missing HDFS temp path, check gestore-conf.xml");
             System.exit(1);
         }
         
         if(argConf.get("local_temp_path") == null) {
-            System.err.println("Missing local_temp_path, check gestore-conf.xml");
+            logger.fatal("Missing local temp path, check gestore-conf.xml");
             System.exit(1);
         }
         
@@ -246,6 +251,7 @@ public class move extends Configured implements Tool{
         Boolean full_run = curConf.get("intermediate").matches("(?i).*true.*");
         curConf.put("format", argConf.get("format", "unknown"));
         curConf.put("split", argConf.get("split", "1"));
+        curConf.put("copy", argConf.get("copy", "true"));
         
         
         //Constants
@@ -269,14 +275,13 @@ public class move extends Configured implements Tool{
         String parent = "/lock";
         String lockName = parent + "/" + lock;
 
-        System.out.println("Getting lock " + lockName);
+        logger.debug("Getting lock " + lockName);
         
         try{
             if(zkInstance.exists(parent, false) == null)
                 zkInstance.create(parent, new byte [0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.fromFlag(0));
         } catch (Exception E) {
-            System.out.println("Error creating lock node: " + E.toString());
-            E.printStackTrace();
+            logger.error("Error creating lock node: " + E.toString());
             return null;
         }
         
@@ -297,24 +302,22 @@ public class move extends Configured implements Tool{
                         continue checkLock;
                     }
                 }
-                System.out.println("Got lock " + lockName);
+                logger.info("Got lock " + lockName);
                 return realPath;
             }
         } catch(Exception E) {
-            System.out.println("While trying to get lock " + lockName);
-            System.out.println("ZKException " + E.toString());
+            logger.error("Exception while trying to get lock " + lockName + " :" + E.toString());
             E.printStackTrace();
             return null;
         }
     }
     
     private static boolean unlock(String lock) {
-        System.out.println("Releasing lock " + lock);
+        logger.debug("Releasing lock " + lock);
         try {
             zkInstance.delete(lock, -1);
         } catch(Exception E) {
-            //System.out.println("Error releasing lock: " + E.toString());
-            //E.printStackTrace();
+            logger.debug("Error releasing lock: " + E.toString());
             return true;
         }
         return true;
@@ -345,9 +348,7 @@ public class move extends Configured implements Tool{
         try {
             retString = extended_file.substring(base_file.length() + 1);
         } catch (IndexOutOfBoundsException E){
-            System.out.println("WARNING: getSuffix() used with incompatable paramaters!");
-            System.out.println("base_file = " + base_file);
-            System.out.println("extended_file = " + extended_file);
+            logger.error("getSuffix() used with incompatible parameters, base file: " + base_file + " extended file: " + extended_file);
             retString = "";
         }
         return retString;
@@ -363,14 +364,13 @@ public class move extends Configured implements Tool{
             config.put("timestamp_real", latestVersion.toString());
             config.put("timestamp_stop", latestVersion.toString());
         } catch (Exception E) {
-            System.out.println("Trying to get file that is impossible to generate for file " + getFullPath(config));
-            E.printStackTrace();
+            logger.error("Tryign to get file that is impossible to generate: " + getFullPath(config));
             return null;
         }
         if(Integer.parseInt(config.get("timestamp_start")) > Integer.parseInt(config.get("timestamp_stop"))) {
           return null;
-        }       
-        System.out.println("Getting DB for timestamp: " + config.get("timestamp_start") + " to " + config.get("timestamp_stop"));
+        }    
+        logger.debug("Getting DB for timestamp " + config.get("timestamp_start") + " to " + config.get("timestamp_stop"));   
         
         String final_result = getFullPath(config);
 
@@ -391,7 +391,7 @@ public class move extends Configured implements Tool{
                 config.put("timestamp_real", latestVersion.toString());
                 config.put("timestamp_stop", latestVersion.toString());
                 
-                Class<?> sourceClass = Class.forName("org.diffdb." + config.get("source") + "Source");
+                Class<?> sourceClass = Class.forName("org.gestore.plugin.source." + config.get("source") + "Source");
                 Method process_data = sourceClass.getMethod("process", Hashtable.class, FileSystem.class);
                 Object processor = sourceClass.newInstance();
                 Object retVal;
@@ -399,14 +399,14 @@ public class move extends Configured implements Tool{
                     retVal = process_data.invoke(processor, config, fs);
                 } catch (InvocationTargetException E) {
                     Throwable exception = E.getTargetException();
-                    System.out.println("Exception: " + exception.toString() + "Stacktrace: ");
+                    logger.error("Unable to call method in child class: " + exception.toString());
                     exception.printStackTrace(System.out);
                     unlock(lockName);
                     return null;
                 }
                 FileStatus [] files = (FileStatus [])retVal;
                 if(files == null) {
-                    System.out.println("Error getting file, no files returned...");
+                    logger.error("Error getting files, no files returned");
                     return null;
                 }
                 
@@ -416,8 +416,7 @@ public class move extends Configured implements Tool{
                     String suffix = getSuffix(config.get("file_id"), cur_file.getName());
                     cur_local_path = cur_local_path.suffix(suffix);
                     Path res_path = new Path(new String(final_result + suffix));
-                    System.out.println("Moving file " + cur_file.toString() + " to " + res_path.toString());
-                    System.out.println("Final result: " + final_result + " Suffix: " + suffix);
+                    logger.debug("Moving file" + cur_file.toString() + " to " + res_path.toString());
                     fs.moveFromLocalFile(cur_file, res_path);
                 }
 
@@ -441,13 +440,11 @@ public class move extends Configured implements Tool{
               rowName = rowName + config.get("task_id");
             }
         }
-        System.out.println("Row name:" + rowName);
         Get timestampGet = new Get(rowName.getBytes());
         timestampGet.addColumn("d".getBytes(), "update".getBytes());
         Result timestampResult = db_util.doGet(config.get("db_name_updates"), timestampGet);
         KeyValue tsKv = timestampResult.getColumnLatest("d".getBytes(), "update".getBytes());
         if(tsKv == null) {
-	  System.out.println("Probably a meta-data collection...");
 	  rowName = config.get("file_id") + "_";
 	  timestampGet = new Get(rowName.getBytes());
 	  timestampGet.addColumn("d".getBytes(), "update".getBytes());
@@ -465,7 +462,7 @@ public class move extends Configured implements Tool{
     private static boolean putFileEntry(dbutil db_util, FileSystem fs, String db_name, String file_id, String file_path, String source) throws Exception{
         String all_paths = file_path;
         if(hasFile(db_util, fs, db_name, file_id, file_path)) {
-            System.out.println("File already found! PutFileEntry aborting...");
+            logger.debug("File already found, putFileEntry aborting");
             return false;
         } else {
             Get file_id_get = new Get(file_id.getBytes());
@@ -608,6 +605,7 @@ public class move extends Configured implements Tool{
         System.out.println("-D full_run = 'true' if you want to re-run the complete pipeline (ie. no incremental computations");
         System.out.println("-D format = the format of the file you are moving to or from");
         System.out.println("-D split = the number of file splits to make");
+        System.out.println("-D copy = true or false, copy file(s) to local disk (if false, will output filename and location on HDFS)");
         System.out.println("");
         System.out.println("Example usage:");
         System.out.println("hadoop jar diffdb.jar org.diffdb.move -Drun=23452 -Dfile=sprot -Dtype=r2l -Dtimestamp_start=201109 -Dtimestamp_stop=201112 -Dregex=OC=.*bacteria.* -Dfull_run=false");

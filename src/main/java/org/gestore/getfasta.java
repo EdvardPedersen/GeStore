@@ -276,7 +276,7 @@ public class getfasta extends Configured implements Tool{
         config.set("delimiter", delimiter);
         config.set("taxon", taxon);
         config.set("type", type);
-        config.set("classname", "org.diffdb." + className + "Entry");
+        config.set("classname", "org.gestore.plugin.entry." + className + "Entry");
         
         config.set("mapred.job.map.memory.mb", "3072");
         config.set("mapred.job.reduce.memory.mb", "3072");
