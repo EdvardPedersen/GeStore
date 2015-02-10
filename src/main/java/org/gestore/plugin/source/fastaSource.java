@@ -7,7 +7,7 @@ import java.util.*;
 import java.io.File;
 
 public class fastaSource implements sourceType{
-    fastaSource() {
+    public fastaSource() {
 
     }
     

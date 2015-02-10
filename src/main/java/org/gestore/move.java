@@ -165,7 +165,7 @@ public class move extends Configured implements Tool{
 	                        putFileEntry(db_util, hdfs, confArg.get("db_name_files"), confArg.get("file_id"), confArg.get("full_file_name"), confArg.get("source"));
 			}
                     } else {
-                        logger.warn("Remote file not found, and cannot be generated!");
+                        logger.warn("Remote file not found, and cannot be generated! File: " + confArg);
                         unlock(lockName);
                         return 1;
                     }

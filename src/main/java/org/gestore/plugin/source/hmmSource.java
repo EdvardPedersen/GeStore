@@ -7,7 +7,7 @@ import java.util.*;
 import java.io.File;
 
 public class hmmSource implements sourceType{
-    hmmSource() {
+    public hmmSource() {
 
     }
     

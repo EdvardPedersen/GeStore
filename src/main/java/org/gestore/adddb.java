@@ -186,7 +186,7 @@ public class adddb extends Configured implements Tool{
         config.set(TableOutputFormat.OUTPUT_TABLE, db_util.getRealName(outputTable));
         //config.set("outputTable", outputTable);
         config.set("timestamp", timestamp);
-        config.set("classname", "org.diffdb." + type + "Entry");
+        config.set("classname", "org.gestore.plugin.entry." + type + "Entry");
         
         //Enable profiling information
         config.setBoolean("mapred.task.profile", false);

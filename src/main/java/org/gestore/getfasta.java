@@ -148,13 +148,15 @@ public class getfasta extends Configured implements Tool{
 
     public static class getfastaReduce extends Reducer<Text, Text, Text, Text>{
         private MultipleOutputs<Text, Text> multiOut;
+        private Text deleted;
         
         public void setup(Context context) {
             multiOut = new MultipleOutputs<Text, Text>(context);
+            deleted = new Text("DELETED");
         }
         
         public void reduce(Text key, Iterable<Text> value, Context context) throws IOException, InterruptedException {
-            if(key.toString().equals("DELETED")) {
+            if(key.equals(deleted)) {
                 System.out.println("DELETED");
                 Iterator iter = value.iterator();
                 while(iter.hasNext()){
@@ -271,6 +273,8 @@ public class getfasta extends Configured implements Tool{
         
         Configuration config = HBaseConfiguration.create();
         config.set("mapred.textoutputformat.separator","\n");
+        config.set("mapred.compress.map.output", "true");
+        config.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.SnappyCodec");
         config.set("timestamp", timestampStop);
         config.set("low_timestamp", timestampStart);
         config.set("delimiter", delimiter);
@@ -287,7 +291,8 @@ public class getfasta extends Configured implements Tool{
 	}
         
         dbutil db_util = new dbutil(config);
-	//config.setBoolean("mapred.task.profile", true);
+	config.setBoolean("mapred.task.profile", false);
+        //config.set("mapred.task.profile.params", "agentlib:hprof=cpu=samples");
         Job job = new Job(config, "getfasta_" + className + "_" + inputTableS);
         MultipleOutputs.setCountersEnabled(job, true);
         System.out.println("Type: " + type);
@@ -319,7 +324,7 @@ public class getfasta extends Configured implements Tool{
         
         TableMapReduceUtil.initTableMapperJob(db_util.getRealName(inputTableS), ourScan, getfastaMap.class, Text.class, Text.class, job);
         job.setReducerClass(getfastaReduce.class);
-        job.setNumReduceTasks(1);
+        job.setNumReduceTasks(Integer.parseInt(argConf.get("split", "1")));
 
         TextOutputFormat.setOutputPath(job, new Path(outputFile));
         //job.setOutputFormatClass(TextOutputFormat.class); 
