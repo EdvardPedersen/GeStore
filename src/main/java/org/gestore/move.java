@@ -417,7 +417,11 @@ public class move extends Configured implements Tool{
                     cur_local_path = cur_local_path.suffix(suffix);
                     Path res_path = new Path(new String(final_result + suffix));
                     logger.debug("Moving file" + cur_file.toString() + " to " + res_path.toString());
-                    fs.moveFromLocalFile(cur_file, res_path);
+		    if(config.get("copy").equals("true")) {
+	                    fs.moveFromLocalFile(cur_file, res_path);
+	            } else {
+			fs.rename(cur_file,res_path);
+		    }
                 }
 
                 config.put("full_file_name", final_result);
