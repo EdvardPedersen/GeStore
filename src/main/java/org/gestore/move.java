@@ -16,6 +16,8 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.charset.Charset;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.mapreduce.*;
 import org.apache.hadoop.hbase.client.Put;
@@ -98,6 +100,7 @@ public class move extends Configured implements Tool{
         db_util.register_database(confArg.get("db_name_runs"), true);
         db_util.register_database(confArg.get("db_name_updates"), true);
         FileSystem hdfs = FileSystem.get(config);
+        FileSystem localFS = FileSystem.getLocal(config);
         
         
         
@@ -201,7 +204,13 @@ public class move extends Configured implements Tool{
                     cur_local_path = cur_local_path.suffix(new String("." + suffix));
                 }
                 if(confArg.get("copy").equals("true")) {
-                    hdfs.copyToLocalFile(cur_file, cur_local_path);
+                    String crc = hdfs.getFileChecksum(cur_file).toString();
+                    if(checksumLocalTest(cur_local_path, crc)) {
+                      continue;
+                    } else {
+                      hdfs.copyToLocalFile(cur_file, cur_local_path);
+                      writeChecksum(cur_local_path, crc);
+                   }
                 } else {
                     System.out.println(cur_local_path + "\t" + cur_file);
                 }
@@ -321,6 +330,36 @@ public class move extends Configured implements Tool{
             return true;
         }
         return true;
+    }
+
+    private static boolean checksumLocalTest(Path localPath, String checksum) {
+	String crcPath = localPath.toString() + ".crc";
+        if(Files.isReadable(java.nio.file.Paths.get(crcPath))) {
+          try {
+            List<String> lines = Files.readAllLines(java.nio.file.Paths.get(crcPath), Charset.forName("UTF-8"));
+            for(String line: lines) {
+              if(line.equals(checksum)) {
+                return true;
+              }
+            }
+          } catch(Exception e) {
+            return false;
+          }
+        }
+        return false;
+    }
+
+    private static boolean writeChecksum(Path localPath, String checksum) {
+        try {
+          java.io.BufferedWriter writer = Files.newBufferedWriter(java.nio.file.Paths.get(localPath.toString() + ".crc"), Charset.forName("UTF-8"));
+          writer.write(checksum);
+          writer.flush();
+          writer.close();
+          return true;
+       } catch(Exception e) {
+          logger.warn("Unable to write CRC file!");
+          return false;
+       }
     }
     
     private static String getConfigString(Configuration config) {
