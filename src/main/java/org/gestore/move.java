@@ -322,7 +322,7 @@ public class move extends Configured implements Tool{
     }
     
     private static boolean unlock(String lock) {
-        logger.debug("Releasing lock " + lock);
+        logger.info("Releasing lock " + lock);
         try {
             zkInstance.delete(lock, -1);
         } catch(Exception E) {
