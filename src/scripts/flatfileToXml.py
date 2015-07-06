@@ -75,18 +75,33 @@ def main(args):
     parser.add_argument('-d', '--deleted', help='File containing deleted entries, seperated by newlines')
     parser.add_argument('-p', '--program', required=True, help='Name of the program used to generate input')
     parser.add_argument('-t', '--taxon', required=True, help='Taxonomy name')
+    parser.add_argument('-m', '--metadata', help='File containing meta-data, required for e-value correction')
     options = parser.parse_args(args)
     
     file1 = open(options.input, 'r')
     entries = dict()
     deleted = set()
-    
+
+    e_val_mult = 1.0
+
     if(options.deleted):
       #delFile = open(options.deleted)
       if(os.path.isfile(options.deleted)):
         for line in open(options.deleted):
           deleted.add(line.strip())
     
+    if(option.metadata):
+      inc_entr = 0
+      full_entr = 0
+      if(os.path.isfile(options.metadata)):
+        for line in open(options.metadata):
+          if(line.startswith("INC_ENTRIES")):
+            inc_entr = int(line.split("\t")[1])
+          elif(line.startswith("FULL_ENTRIES")):
+            full_entr = int(line.split("\t")[1])
+        if(inc_entr > 0 and full_entr > 0):
+          e_val_mult = full_entr / float(inc_entr)
+
     last_entry = 0
     
     iteration_num = 0
@@ -107,7 +122,7 @@ def main(args):
             continue
         if(subjectId in deleted):
             continue
-        tempEntry = Entry(queryId, subjectId, percIdentity, alnLength, mismatchCount, gapOpenCount, queryStart, queryEnd, subjectStart, subjectEnd, eVal, bitScore)
+        tempEntry = Entry(queryId, subjectId, percIdentity, alnLength, mismatchCount, gapOpenCount, queryStart, queryEnd, subjectStart, subjectEnd, str(float(eVal) * e_val_mult), bitScore)
         if(last_entry):
             difference = tempEntry.compare(last_entry)
         else:
