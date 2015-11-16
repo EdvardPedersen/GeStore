@@ -222,7 +222,7 @@ public class fswrapper {
       ourScan = new Scan(new String(dst_path + "_").getBytes(), incremented(new String(dst_path + "_")).getBytes());
       ResultScanner result = ourTable.getScanner(ourScan);
       int delete = 0;
-      System.out.println("Deleting a fiiiile" + dst_path);
+      System.out.println("Deleting a file" + dst_path);
       for(Result res : result) {
         System.out.println("Result: " + new String(res.getRow()));
         Path delPath = new Path(new String(res.getColumnLatest("d".getBytes(), "PATH".getBytes()).getValue()));
