@@ -14,7 +14,7 @@ Getting started
 
 To start off with, we need to add some data. The preview VM automatically downloads three versions of the UniProt/Sprot database, which we can use.
 
-To add the Sprot database, do "gestore_add sprot_2014_01.dat --name=sprot --format=uniprot --version=2014_01".
+To add the Sprot database, do "gestore_add sprot_2014_01.dat sprot --format=uniprot --timestamp=2014_01".
 
 If you want to test that it was added correctly, do "gestore_get sprot".
 
@@ -29,6 +29,11 @@ The configuration can be found in ~/GeStore/conf/gestore.conf, this needs to be 
 Advanced Usage
 ---------------
 
+There are three interfaces you can use to add and retrieve data from GeStore. We already used the Python wrapper in the "Getting Started" section.
+
+The Python interface is a wrapper to more easily generate the parameters for the Java application.
+
+Python interface
 Java interface. (Using the org.gestore.move class)
 HDFS-like interface.
 Parameters.
