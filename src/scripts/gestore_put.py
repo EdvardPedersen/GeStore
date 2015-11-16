@@ -27,7 +27,7 @@ def main(args):
     parser.print_help()
     return
   
-  output = "hadoop jar " + gestore_path + " org.gestore.move -Dfile_id=" + arguments[1] + " -Dpath=" + arguments[0]  
+  output = "hadoop jar " + gestore_path + " org.gestore.move -Dfile=" + arguments[1] + " -Dpath=" + arguments[0]  
   if(options.run):
     output += " -Drun=" + options.run
     
