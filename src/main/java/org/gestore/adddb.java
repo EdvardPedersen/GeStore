@@ -249,6 +249,8 @@ public class adddb extends Configured implements Tool{
                 fs.copyFromLocalFile(new Path(inputDir), tempFile);
             } catch (Exception E) {
                 System.out.println("Unable to copy file from " + inputDir + " to " + tempFile.toString());
+				System.out.println(E.getMessage());
+				System.exit()
             }
             if(fs.isFile(tempFile)) {
                 System.out.println("File copied successfully!\n");
