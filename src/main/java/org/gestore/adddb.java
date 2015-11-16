@@ -268,10 +268,6 @@ public class adddb extends Configured implements Tool{
         
         job.setReducerClass(updatedbReduce.class);
         
-        HTable numReduceTableTesters = new HTable(config, db_util.getRealName(outputTable));
-        int regions = numReduceTableTesters.getRegionsInfo().size();
-        numReduceTableTesters.close();
-        job.setNumReduceTasks(regions);
         job.setNumReduceTasks(0);
         TableMapReduceUtil.addDependencyJars(job); 
         
