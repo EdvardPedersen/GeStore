@@ -250,7 +250,7 @@ public class adddb extends Configured implements Tool{
             } catch (Exception E) {
                 System.out.println("Unable to copy file from " + inputDir + " to " + tempFile.toString());
 				System.out.println(E.getMessage());
-				System.exit()
+				System.exit();
             }
             if(fs.isFile(tempFile)) {
                 System.out.println("File copied successfully!\n");
