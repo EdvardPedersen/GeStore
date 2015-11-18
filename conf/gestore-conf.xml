@@ -12,7 +12,7 @@
 	<!-- Temporary storage on local file system -->
 	<property>
 		<name>local_temp_path</name>
-		<value>/state/partition1/tmp/gestore/</value>
+		<value>/home/${user.name}/gestore_tmp/</value>
 	</property>
 	<!-- Name of the table that contains file information -->
 	<property>
