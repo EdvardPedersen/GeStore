@@ -2,7 +2,7 @@
 
 
 
-echo "export HADOOP_CLASSPATH=/usr/share/java/zookeeper.jar:$HADOOP_CLASSPATH" > /home/vagrant/.bash_profile
+echo "export HADOOP_CLASSPATH=/usr/share/java/zookeeper.jar:$HADOOP_CLASSPATH" >> /home/vagrant/.bash_profile
 echo "export PATH=~/bin/:$PATH" >> /home/vagrant/.bash_profile
 source /home/vagrant/.bash_profile
 

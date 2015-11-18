@@ -17,7 +17,7 @@ To start off with, we need to add some data. The preview VM automatically downlo
 To add the Sprot database, do 
 
 ```
-gestore_add test_data/201401/uniprot_sprot.fasta sprot --format=fasta --timestamp=201401
+gestore_put test_data/201501/uniprot_sprot.fasta sprot --format=fasta --timestamp=201501
 ```
 
 If you want to test that it was added correctly, do 
@@ -31,14 +31,16 @@ The run parameter is used to identify a iteration of the pipeline (e.g. with the
 To do simple queries, you can also limit what is returned by using a regular expression, an example:
 
 ```
-gestore_get sprot --regex=ID=.*sapiens.* --run=1
+gestore_get sprot --regex=ID=.*sapiens.* --run=1 -f
 ```
+
+The -f parameter tells GeStore to ignore previous runs of the pipeline, and get the full database, instead of getting an incremental version.
 
 Let us continue by adding another couple of versions of the sprot meta-database.
 
 ```
-gestore_add test_data/201401/uniprot_sprot.fasta sprot --format=fasta --timestamp=201401
-gestore_add test_data/201403/uniprot_sprot.fasta sprot --format=fasta --timestamp=201403
+gestore_put test_data/201502/uniprot_sprot.fasta sprot --format=fasta --timestamp=201502
+gestore_put test_data/201503/uniprot_sprot.fasta sprot --format=fasta --timestamp=201503
 ```
 
 We can now retrieve an update of the previous bacterial meta-database:
@@ -47,11 +49,6 @@ We can now retrieve an update of the previous bacterial meta-database:
 gestore_get sprot --regex=ID=.*sapiens.* --run=1
 ```
 
-We can also specify that we do not want an incremental meta-database:
-
-```
-gestore_get sprot --run=1 --full_run
-```
 
 Configuration for your own cluster
 ----------------------------------
