@@ -80,9 +80,9 @@ public class uniprotSource implements sourceType{
         for(int fcFormat = 0; fcFormat < fileCounter; fcFormat++) {
             String line;
             if(splitting) {
-                line = "/opt/bio/ncbi/bin/formatdb -t " + params.get("file_id") + "." + Integer.toString(fcFormat) + " -p T -i " + params.get("file_id") + "." + Integer.toString(fcFormat);
+                line = "formatdb -t " + params.get("file_id") + "." + Integer.toString(fcFormat) + " -p T -i " + params.get("file_id") + "." + Integer.toString(fcFormat);
             } else {
-                line = "/opt/bio/ncbi/bin/formatdb -t " + params.get("file_id") + " -p T -i " + params.get("file_id");
+                line = "formatdb -t " + params.get("file_id") + " -p T -i " + params.get("file_id");
             }
             System.out.println("Running command: " + line);
             Runtime ourRuntime = Runtime.getRuntime();

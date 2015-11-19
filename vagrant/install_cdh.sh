@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-
+# Install cloudera in pseudo-distributed mode
 
 echo "export HADOOP_CLASSPATH=/usr/share/java/zookeeper.jar:$HADOOP_CLASSPATH" >> /home/vagrant/.bash_profile
 echo "export PATH=~/bin/:$PATH" >> /home/vagrant/.bash_profile
@@ -14,6 +14,7 @@ sudo -u hdfs hdfs namenode -format
 # Start HDFS
 for x in `cd /etc/init.d ; ls hadoop-hdfs-*` ; do sudo service $x start ; done
 
+# Create directories in HDFS needed by other parts of cloudera
 sudo -u hdfs hdfs dfs -rm -r /tmp
 sudo -u hdfs hdfs dfs -mkdir -p /tmp/hadoop-yarn/staging/history/done_intermediate
 sudo -u hdfs hdfs dfs -chown -R mapred:mapred /tmp/hadoop-yarn/staging

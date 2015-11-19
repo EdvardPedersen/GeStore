@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Install Cloudera in Pseudo-distributed mode
+# Install bigtop to make sure we detect the correct java version
 sudo apt-get -qq update
 sudo apt-get -qq install bigtop-utils -yq
 
