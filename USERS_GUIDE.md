@@ -1,7 +1,7 @@
 GeStore Tutorial
 -------------------
 
-WORK_IN_PROGRESS
+This is the users guide and tutorial for using GeStore.
 
 Using the preview VM
 --------------------
@@ -112,4 +112,17 @@ lsRec		|	Do a recursive "ls"
 
 Plugins
 -------
-Adding new plugins
+
+New plugins can be added by extending the [genericEntry](src/main/java/org/gestore/plugin/entry/genericEntry.java) class for the entry part, and the [sourceType](src/main/java/org/gestore/plugin/source/sourceType.java) class for the source.
+
+The source plugin will usually build a submission for the getfasta.main method (which runs a MapReduce job using the plugin specified). The most simple plugin will then rename and return the list of files produced by getfasta, a simple example of this is found in [fastaSource](src/main/java/org/gestore/plugin/source/fastaSource.java). It may also, in more complex plugins, do post-processing on the data retrieved by GeStore, such as in [uniprotSource](src/main/java/org/gestore/plugin/source/uniprotSource.java).
+
+The entry plugin needs to implement six methods, in addition to the constructors. These methods are described in detail in [genericEntry](src/main/java/org/gestore/plugin/entry/genericEntry.java), and a fairly simple example is in the [fastaEntry](src/main/java/org/gestore/plugin/entry/fastaEntry.java) plugin. A quick summary in pseudocode of the methods that musta be implemented:
+
+Method | Action
+-------|--------
+addEntry(entry) |  Adds an plaintext entry to the internal data structure used by the plugin, and formats it correctly internally.
+getPartialPut(fields, timestamp) | Builds a Put containing all the columns specified in the fields vector, with the given timestamp.
+sanityCheck(type) | Verifies that the internal data is complete enough to produce the given type (i.e. that no required fields are missing).
+get(type, options) | Returns a representation of the entry in the given format and options
+compare(entry) | Returns a list of updated or different elements

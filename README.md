@@ -29,3 +29,4 @@ To install:
 Using GeStore
 -------------
 
+See the [User's guide](USERS_GUIDE.md).

@@ -64,19 +64,11 @@ public class uniprotSource implements sourceType{
             }
             fileCounter++;
         }
-        //fs.rename(new Path(resultPath), new Path(final_result));
         
         local_file_system.delete(new Path(real_temp_path + "*"), true);
-        
-//        if(fs.exists(new Path(result_path_existing)))
-//            fs.copyToLocalFile(true, new Path(result_path_existing), new Path(real_temp_path));
-//        if(fs.exists(new Path(result_path_deleted)))
-//            fs.copyToLocalFile(true, new Path(result_path_deleted), new Path(real_temp_path + ".deleted"));
-//        if(fs.exists(new Path(result_path_metadata))) 
-//            fs.copyToLocalFile(true, new Path(result_path_metadata), new Path(real_temp_path + ".metadata"));
         fs.delete(new Path(temp_dir), true);
-        // Run formatdb
-        // Needs to be moved to somewhere else!
+        
+		// Run formatdb
         for(int fcFormat = 0; fcFormat < fileCounter; fcFormat++) {
             String line;
             if(splitting) {
